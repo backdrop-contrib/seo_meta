@@ -14,13 +14,15 @@ for search engines.
      and `twitter:creator`.  
   
 
-  All tags may be set on per page/node basis or as defaults for all pages 
-  where meta tags is not exactly defined.
+All tags may be set on per page/node basis or as defaults for all pages 
+where meta tags is not exactly defined.
 
-  For each page may be defined new canonical URL instead default.
+For each page may be defined new canonical URL instead default.
 
-  Different *base URL* may be used in all canonical URLs instead default 
-  (or actual) site domain. May be useful for mirroring.
+Different *base URL* may be used in all canonical URLs instead default 
+(or actual) site domain. May be useful for mirroring.
+
+Little fix for "shortcut icon" link "rel" and "type" attributes - as option.
 
 Installation
 ------------
