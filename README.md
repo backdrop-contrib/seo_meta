@@ -76,4 +76,4 @@ Please note
 ----------------------
 
 This module is not compatible with "Base Meta: Page Title And Meta Tags" and 
-cannot be used as upgrade from it or any other.
+cannot be used as an upgrade from it or any other.
