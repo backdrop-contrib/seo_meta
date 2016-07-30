@@ -31,9 +31,12 @@ Installation
   https://backdropcms.org/guide/modules
 
 - Visit the configuration page under Administration > Configuration > 
-  Search and metadata > SEO Meta tags (admin/config/search/seo_meta) 
-  to set default values or specify meta tags for pages created by views, 
-  taxonomy terms or homepage(s).
+  Search and metadata > SEO Meta tags (admin/config/search/seo_meta):
+
+  - to set default values of tags
+  - specify meta tags for pages created by views, taxonomy terms or homepage(s)
+  - define if keywords meta tag should be used
+  - fix shortcut icon link "rel" and "type" attributes (later this should be fixed in core)
 
 Usage
 -----
