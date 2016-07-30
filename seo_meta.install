@@ -1,0 +1,169 @@
+<?php
+/**
+ * @file
+ * SEO Meta Tags install
+ */
+
+/**
+ * Implements hook_requirements().
+ */
+function seo_meta_requirements($phase) {
+  // Ensure translations don't break during installation.
+  $t = get_t();
+  
+  $requirements = array();
+
+  if ($phase == 'install') {
+    if (module_exists('base_meta')) {
+      $requirements['base_meta']['description'] = $t('Please disable module "Base Meta: Page Title And Meta Tags" and try again.');
+      $requirements['base_meta']['severity'] = REQUIREMENT_ERROR;
+    }
+  }
+  
+  return $requirements;
+}
+
+/**
+ * Implements hook_schema().
+ * Define SQL table for seo_meta
+ */
+function seo_meta_schema() {
+  $schema = array();
+
+  $schema['seo_meta'] = array(
+    'description' => 'Table to store meta tags, page titles and path aliases.',
+    'fields' => array(
+      'sm_id' => array(
+        'description' => 'Unique seo meta identifier.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'ce_type' => array(
+        'description' => 'Content entry type code, e.g. for homepage, node, view, taxonomy.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'ce_id' => array(
+        'description' => 'Content entry id, e.g. node nid, view name, taxonomy term.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'path_alias' => array(
+        'description' => 'Path alias for set meta tags and page title.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'langcode' => array(
+        'description' => 'The language code of correspond node.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'page_title' => array(
+        'description' => 'Page title tag content.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'meta_keywords' => array(
+        'description' => 'Meta keywords content.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'meta_description' => array(
+        'description' => 'Meta description content.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'meta_robots' => array(
+        'description' => 'Meta robots content.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'rel_canonical' => array(
+        'description' => 'Meta canonical content.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'meta_tw_card' => array(
+        'description' => 'Twitter card type.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'meta_tw_site' => array(
+        'description' => 'Twitter @username for the website used in the card footer.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'meta_tw_creator' => array(
+        'description' => 'Twitter @username for the content creator/author.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'meta_og_type' => array(
+        'description' => 'Meta Open Graph type.',
+        'type' => 'varchar',
+        'length' => '32',
+        'not null' => FALSE,
+      ),
+      'meta_og_title' => array(
+        'description' => 'Meta Open Graph page title.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'meta_og_description' => array(
+        'description' => 'Meta Open Graph description.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'meta_og_site_name' => array(
+        'description' => 'Meta Open Graph site name.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'meta_og_image_fid' => array(
+        'description' => 'Meta Open Graph image fid.',
+        'type' => 'int',
+        'not null' => FALSE,
+        'unsigned' => TRUE,
+      ),
+      'uid' => array(
+        'description' => 'Author identifier.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'changed' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Unix timestamp of when last record occurred.',
+      ),
+    ),
+    'primary key' => array(
+      'sm_id',
+      'ce_type',
+      'ce_id',
+      'langcode',
+    ),
+  );
+
+  return $schema;
+}

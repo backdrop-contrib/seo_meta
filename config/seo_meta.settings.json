@@ -1,0 +1,9 @@
+{
+  "_config_name": "seo_meta.settings",
+  "base_canonical_url": "",
+  "use_keywords": 0,
+  "meta_og_images_dir": "og_images",
+  "fix_favicon": 0,
+  "append_site_name": 1,
+  "site_name_divider": "|"
+} 

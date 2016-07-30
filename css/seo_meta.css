@@ -1,0 +1,6 @@
+.form-checkboxes {
+  display: flex;
+}
+.form-checkboxes > div.form-item {
+  margin-right: 2em;
+}
