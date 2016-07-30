@@ -67,7 +67,7 @@ License
 This project is GPL v2 software. See the LICENSE.txt file in this directory for
 complete text.
 
-Maintainer
+Current Maintainer
 ------------------
 
 Vladimir (https://github.com/findlabnet/)
@@ -75,5 +75,6 @@ Vladimir (https://github.com/findlabnet/)
 Please note
 ----------------------
 
-This module is not compatible with "Base Meta: Page Title And Meta Tags" and 
-cannot be used as an upgrade from it or any other.
+This module intended for replacement of module [Base Meta: Page Title And Meta Tags] (https://backdropcms.org/project/base_meta) as it refactored and extended successor, 
+not backward compatible with it and cannot be used as an upgrade from it or any other
+similar module.
