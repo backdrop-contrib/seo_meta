@@ -36,7 +36,7 @@ Installation
   - to set default values of tags
   - specify meta tags for pages created by views, taxonomy terms or homepage(s)
   - define if keywords meta tag should be used
-  - fix shortcut icon link "rel" and "type" attributes (later this should be fixed in core)
+  - fix shortcut icon link "rel" and "type" attributes (later need to be fixed in the core)
 
 Usage
 -----

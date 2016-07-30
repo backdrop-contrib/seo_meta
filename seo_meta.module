@@ -171,7 +171,7 @@ function seo_meta_form_alter(&$form, $form_state, $form_id) {
       '#type' => 'checkbox',
       '#title' => t('Define tags for page of this node'),
       '#default_value' => is_array($saved_tags),
-      '#description' => t('Optional. If not checked, <a href="@url">default values</a> will be used', array('@url' => url('admin/config/search/seo_meta'))),
+      '#description' => t('If selected, <a href="@url">default values</a> of meta tags will not be used for this node.', array('@url' => url('admin/config/search/seo_meta'))),
     );
     $form['seo_meta']['holder'] = array(
       '#type' => 'container',
@@ -745,7 +745,7 @@ function seo_meta_preprocess_page(&$variables) {
   }
   
   $status = backdrop_get_http_header('status');
-  // awoid error pages
+  // awoid main errors status pages
   if (in_array($status, array('404 Not Found', '403 Forbidden'))) {
     return FALSE;
   }
@@ -813,7 +813,7 @@ function seo_meta_canonical_url($system_canonical = '') {
   if (is_object($caller)) {
     
     $rel_canonical = seo_meta_get_tag_value('rel_canonical', $caller->type, $caller->id);
-// CHECK LANG BELOW !!!    
+  
     if ($rel_canonical != '') {
       
       $canonical_url = strpos($rel_canonical, 'http') !== 0 ? $proto . $base_canonical_url . '/' . $rel_canonical : $rel_canonical;

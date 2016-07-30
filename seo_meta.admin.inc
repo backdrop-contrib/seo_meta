@@ -59,7 +59,7 @@ function seo_meta_settings_form() {
     '#type' => 'checkbox',
     '#title' => t('Use keywords meta tag.'),
     '#default_value' => $config->get('use_keywords'),
-    '#description' => t('If checked - field for keywords meta will be enabled sitewide. Google does not use the keywords meta tag, but if you want to use them, use them.'),
+    '#description' => t('If selected - field for keywords meta will be enabled sitewide. Google does not use the keywords meta tag, but if you want to use them, use them.'),
   );
   $form['basic']['meta_keywords'] = array(
     '#type' => 'textfield',
