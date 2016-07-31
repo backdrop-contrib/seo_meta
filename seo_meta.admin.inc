@@ -692,7 +692,7 @@ function seo_meta_custom_item_tags_edit_submit($form, &$form_state) {
   $data = array (
     'ce_type'             => $page_type,
     'ce_id'               => $page_id,
-    'path_alias'          => 'fix-it-later',
+    'path_alias'          => 'und',
     'langcode'	          => $language->langcode,
     'page_title'          => trim($form_state['values']['page_title']),
     'meta_keywords'       => $keywords,

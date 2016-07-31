@@ -768,7 +768,7 @@ function seo_meta_preprocess_page(&$variables) {
     }
   }
 
-  // Add missing canonical URL to view and homepages
+  // Add canonical URL to view and homepages
   if (is_object($caller)) {
     if ($caller->type == TYPE_VIEW || $caller->type == TYPE_HOMEPAGE) {
 
