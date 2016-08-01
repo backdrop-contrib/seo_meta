@@ -139,6 +139,7 @@ function seo_meta_form_alter(&$form, $form_state, $form_id) {
   if (isset($form['#node']) && $form['#node']->type . '_node_form' == $form_id) {
 
     $config = config('seo_meta.settings');
+    $site_frontpage = config_get('system.core', 'site_frontpage');
     $use_keywords = $config->get('use_keywords');
 
     $form['#validate'][] = 'seo_meta_form_validate';
@@ -182,6 +183,14 @@ function seo_meta_form_alter(&$form, $form_state, $form_id) {
         ),
       ),
     );
+    // Inform user if currently editing node is set as site frontpage 
+    if (strpos($site_frontpage, 'node/') === 0 && $form['#node']->nid == substr($site_frontpage, 5)) {
+      $form['seo_meta']['holder']['note'] = array(
+        '#prefix' => '<div class="messages warning">',
+        '#suffix' => '</div>',
+        '#markup' => t('This node is set as site frontpage, so <a href="@link">frontpage meta tags</a> will be used instead values from this form.', array('@link' => url('admin/config/search/seo_meta/home'))),
+      );
+    }
     $form['seo_meta']['holder']['page_title'] = array(
       '#type' => 'textfield',
       '#title' => t('Page title'),
@@ -523,8 +532,11 @@ function seo_meta_caller() {
   if (backdrop_is_front_page()) {
     $caller->is_front = TRUE;
     $caller->type = TYPE_HOMEPAGE;
-    $caller->id = $caller->langcode != 'und' ? $caller->langcode : '';   // NEED CHECK !!!
+    $caller->id = $caller->langcode != 'und' ? $caller->langcode : '';
   }
+  // fix for pages with undefined id and type, user login for example
+  $caller->id = isset($caller->id) ? $caller->id : $caller->langcode;
+  $caller->type = isset($caller->type) ? $caller->type : TYPE_DEFAULTS;
       
   return $caller;
 }
@@ -754,18 +766,23 @@ function seo_meta_preprocess_page(&$variables) {
   $caller = seo_meta_caller();
 
   $seo_meta_title = is_object($caller) ? seo_meta_get_tag_value('page_title', $caller->type, $caller->id) : '';
+  $head_site_name = $variables['head_title_array']['name'];
   
   // Add page title  
-  if ($seo_meta_title != '') {
+  if (!empty($seo_meta_title) && $seo_meta_title != 'und') {
+    
     if ($config->get('append_site_name')) {
       $site_name_divider = $config->get('site_name_divider');
 
-      $head_site_name = $variables['head_title_array']['name'];
       $variables['head_title'] = $seo_meta_title . ' ' . $site_name_divider . ' ' . $head_site_name;
     }
     else {
       $variables['head_title'] = $seo_meta_title;
     }
+  }
+  else {
+
+    $variables['head_title'] = $head_site_name;
   }
 
   // Add canonical URL to view and homepages

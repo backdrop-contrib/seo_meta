@@ -40,24 +40,24 @@ Installation
 
 Usage
 -----
- - each node *Create/Edit* form have additional vertical tab named 
+ - each **node** *Create/Edit* form have additional vertical tab named 
    'SEO meta tags' - select checkbox 'Define tags for page of this node'
    so opened fields may be filled as required;
 
- - meta tags for pages provided by module`taxonomy` may be set by using tab
+ - meta tags for pages provided by module **taxonomy** may be set by using tab
    in admin area: *Administration > Configuration > Search and metadata > 
    SEO Meta tags > Taxonomy* pages or visit URL
    `<domain_name>/admin/config/search/seo_meta/taxonomy`,
    then select vocabulary which contain terms needed, select any available 
    term name for opening add/edit meta tags form;
  
- - meta tags for pages provided by module `views` may be set by using tab
+ - meta tags for pages provided by module **views** may be set by using tab
    in admin area: *Administration > Configuration > Search and metadata > 
    SEO Meta tags > Views* pages or visit URL
    `<domain_name>/admin/config/search/seo_meta/views`
    and select any available page name for opening add/edit meta tags form;  
 
- - meta tags for homepage may be set by using tab
+ - meta tags for **homepage** may be set by using tab
    in admin area: *Administration > Configuration > Search and metadata > 
    SEO Meta tags > Homepage* or visit URL
    `<domain_name>/admin/config/search/seo_meta/home`.

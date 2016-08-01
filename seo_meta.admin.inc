@@ -505,7 +505,7 @@ function seo_meta_custom_item_tags_edit($form, &$form_state) {
     '#collapsed' => FALSE,
   );
   $form['seo_meta']['define'] = array(
-    '#markup' => $subtitle,
+    '#markup' => $subtitle . '<div class="description">' . t('Please note: any field that left empty will not generate corresponding tag.') . '</div>',
   );
 
   $form['seo_meta']['page_title'] = array(
