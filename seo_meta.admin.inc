@@ -295,8 +295,9 @@ function seo_meta_settings_homepage_form($form, &$form_state) {
   $site_langs = language_list(TRUE);
   
   if (count($site_langs) == 1) {
-    
-    return seo_meta_custom_item_tags_edit();
+
+    $langcode = key($site_langs);
+    backdrop_goto('admin/config/search/seo_meta/home/' . $langcode);
   }
   else {
     $form['#attached']['css'] = array(
@@ -446,7 +447,8 @@ function seo_meta_taxonomy_callback($form, $form_state) {
  * @param type $form_state
  */
 function seo_meta_custom_item_tags_edit($form, &$form_state) {
-
+  
+  global $language;
   $config       = config('seo_meta.settings');
   $use_keywords = $config->get('use_keywords');
 
@@ -455,7 +457,7 @@ function seo_meta_custom_item_tags_edit($form, &$form_state) {
   
   if ($page_type == 'home') { 
     $page_name     = '';
-    $page_langcode = $args[5];
+    $page_langcode = isset($args[5]) ? $args[5] : $language->langcode;
     $type          = TYPE_HOMEPAGE;
     $page_id       = $page_langcode;
     
@@ -680,7 +682,7 @@ function seo_meta_custom_item_tags_edit_validate($form, &$form_state) {
  * 
  */
 function seo_meta_custom_item_tags_edit_submit($form, &$form_state) {
-
+  
   global $user, $language; 
 
   $page_type       = $form_state['input']['page_type'];
