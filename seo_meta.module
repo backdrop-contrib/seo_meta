@@ -770,25 +770,26 @@ function seo_meta_preprocess_page(&$variables) {
   
   // Add page title  
   if (!empty($seo_meta_title) && $seo_meta_title != 'und') {
-    
-    if ($config->get('append_site_name')) {
-      $site_name_divider = $config->get('site_name_divider');
-
-      $variables['head_title'] = $seo_meta_title . ' ' . $site_name_divider . ' ' . $head_site_name;
-    }
-    else {
-      $variables['head_title'] = $seo_meta_title;
-    }
+    $page_title = $seo_meta_title;  
   }
   else {
+    $page_title = isset($variables['head_title_array']['title']) ? $variables['head_title_array']['title'] : '';
+  }
 
-    $variables['head_title'] = $head_site_name;
+  if (!empty($page_title)) {
+    if ($config->get('append_site_name')) {
+      $site_name_divider = $config->get('site_name_divider');
+      $variables['head_title'] = $page_title . ' ' . $site_name_divider . ' ' . $head_site_name;
+    }
+    else {
+      $variables['head_title'] = $page_title;
+    }
   }
 
   // Add canonical URL to view and homepages
   if (is_object($caller)) {
+    
     if ($caller->type == TYPE_VIEW || $caller->type == TYPE_HOMEPAGE) {
-
       
       $canonical_url = seo_meta_canonical_url();
       if (!empty($canonical_url)) {
