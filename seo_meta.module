@@ -505,12 +505,7 @@ function seo_meta_caller() {
   
   $caller = new stdClass();
   
-  if (module_exists('language')) {
-    $caller->langcode = $language->langcode;
-  }
-  else {
-    $caller->langcode = key(language_list(TRUE));
-  }
+  $caller->langcode = $language->langcode;
 
   if (arg(0) == 'node' && is_numeric(arg(1))) {
     $caller->type = TYPE_NODE;
