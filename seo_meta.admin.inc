@@ -26,7 +26,7 @@ function seo_meta_settings_form() {
   );
   
   $form['#attached']['css'] = array(
-    backdrop_get_path('module', 'seo_meta') . '/css/seo_meta.css',
+    backdrop_get_path('module', 'seo_meta') . '/css/seo_meta.admin.css',
   );
 
   $form['description'] = array(
@@ -301,7 +301,7 @@ function seo_meta_settings_homepage_form($form, &$form_state) {
   }
   else {
     $form['#attached']['css'] = array(
-      backdrop_get_path('module', 'seo_meta') . '/css/seo_meta.css',
+      backdrop_get_path('module', 'seo_meta') . '/css/seo_meta.admin.css',
     );
 
     $form['description'] = array(
@@ -495,7 +495,7 @@ function seo_meta_custom_item_tags_edit($form, &$form_state) {
   );  
   
   $form['#attached']['css'] = array(
-    backdrop_get_path('module', 'seo_meta') . '/css/seo_meta.css',
+    backdrop_get_path('module', 'seo_meta') . '/css/seo_meta.admin.css',
   );
   
   $form['seo_meta'] = array(

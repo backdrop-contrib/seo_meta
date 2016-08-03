@@ -159,19 +159,19 @@ function seo_meta_form_alter(&$form, $form_state, $form_id) {
       '#group' => 'additional_settings',
       '#attached' => array(
         'js' => array(
-          'vertical-tabs' => backdrop_get_path('module', 'seo_meta') . '/js/seo_meta.js',
+          'vertical-tabs' => backdrop_get_path('module', 'seo_meta') . '/js/seo_meta.admin.js',
         ),
       ),
     );
     
     $form['seo_meta']['#attached']['css'] = array(
-      backdrop_get_path('module', 'seo_meta') . '/css/seo_meta.css',
+      backdrop_get_path('module', 'seo_meta') . '/css/seo_meta.admin.css',
     );
 
     // Inform user if currently editing node is set as site front page 
     if (strpos($site_frontpage, 'node/') === 0 && $form['#node']->nid == substr($site_frontpage, 5)) {
       $form['seo_meta']['note'] = array(
-        '#prefix' => '<div class="messages status">',
+        '#prefix' => '<div class="messages warning">',
         '#suffix' => '</div>',
         '#markup' => t('This node is set as site <a href="@front">front page</a>, '
             . 'so for this page <a href="@link">front page meta tags</a> will be used.',
