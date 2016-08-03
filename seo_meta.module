@@ -60,7 +60,7 @@ function seo_meta_menu() {
   );
 
   $items['admin/config/search/seo_meta/home'] = array(
-    'title' => 'Homepage',
+    'title' => 'Front page',
     'type' => MENU_LOCAL_TASK,
     'page arguments' => array('seo_meta_settings_homepage_form'),
     'file' => 'seo_meta.admin.inc',
@@ -90,7 +90,7 @@ function seo_meta_menu() {
   );
   
   $items['admin/config/search/seo_meta/home/%'] = array(
-    'title' => 'Homepage meta tags edit form',
+    'title' => 'Front page meta tags edit form',
     'type' => MENU_SUGGESTED_ITEM,
     'page arguments' => array('seo_meta_custom_item_tags_edit'),
     'file' => 'seo_meta.admin.inc',
@@ -168,162 +168,166 @@ function seo_meta_form_alter(&$form, $form_state, $form_id) {
       backdrop_get_path('module', 'seo_meta') . '/css/seo_meta.css',
     );
 
-    $form['seo_meta']['enabled'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Define tags for page of this node'),
-      '#default_value' => is_array($saved_tags),
-      '#description' => t('If selected, <a href="@url">default values</a> of meta tags will not be used for this node.', array('@url' => url('admin/config/search/seo_meta'))),
-    );
-    $form['seo_meta']['holder'] = array(
-      '#type' => 'container',
-      '#parents' => array('seo_meta'),
-      '#states' => array(
-        'invisible' => array(
-          'input[name="seo_meta[enabled]"]' => array('checked' => FALSE),
-        ),
-      ),
-    );
-    // Inform user if currently editing node is set as site frontpage 
+    // Inform user if currently editing node is set as site front page 
     if (strpos($site_frontpage, 'node/') === 0 && $form['#node']->nid == substr($site_frontpage, 5)) {
-      $form['seo_meta']['holder']['note'] = array(
-        '#prefix' => '<div class="messages warning">',
+      $form['seo_meta']['note'] = array(
+        '#prefix' => '<div class="messages status">',
         '#suffix' => '</div>',
-        '#markup' => t('This node is set as site frontpage, so <a href="@link">frontpage meta tags</a> will be used instead values from this form.', array('@link' => url('admin/config/search/seo_meta/home'))),
+        '#markup' => t('This node is set as site <a href="@front">front page</a>, '
+            . 'so for this page <a href="@link">front page meta tags</a> will be used.',
+            array('@link' => url('admin/config/search/seo_meta/home'),'@front' => url('admin/config/system/site-information'))),
       );
     }
-    $form['seo_meta']['holder']['page_title'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Page title'),
-      '#default_value' => isset($saved_tags['page_title']) ? $saved_tags['page_title'] : '',
-      '#description' => t('Description of this page to appear in the &lt;title&gt; tag for search engines search result listings.'),
-    );
-    if ($use_keywords) {
-      $form['seo_meta']['holder']['meta_keywords'] = array(
+    else {
+      $form['seo_meta']['enabled'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Define tags for page of this node'),
+        '#default_value' => !empty($saved_tags),
+        '#description' => t('Optional. If not enabled, <a href="@url">default values</a> will be used', array('@url' => url('admin/config/search/base_meta'))),
+      );
+      $form['seo_meta']['holder'] = array(
+        '#type' => 'container',
+        '#parents' => array('seo_meta'),
+        '#states' => array(
+          'invisible' => array(
+            'input[name="seo_meta[enabled]"]' => array('checked' => FALSE),
+          ),
+        ),
+      );
+      $form['seo_meta']['holder']['page_title'] = array(
         '#type' => 'textfield',
-        '#title' => t('Meta keywords'),
-        '#default_value' => isset($saved_tags['meta_keywords']) ? $saved_tags['meta_keywords'] : '',
-        '#size' => 120,
-        '#maxlength' => 255,
-        '#description' => t('Comma separated list of keywords (no more than 10 keyword phrases).'),
+        '#title' => t('Page title'),
+        '#default_value' => isset($saved_tags['page_title']) ? $saved_tags['page_title'] : '',
+        '#description' => t('Description of this page to appear in the &lt;title&gt; tag for search engines search result listings.'),
+      );
+      if ($use_keywords) {
+        $form['seo_meta']['holder']['meta_keywords'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Meta keywords'),
+          '#default_value' => isset($saved_tags['meta_keywords']) ? $saved_tags['meta_keywords'] : '',
+          '#size' => 120,
+          '#maxlength' => 255,
+          '#description' => t('Comma separated list of keywords (no more than 10 keyword phrases).'),
+        );
+      }
+      $form['seo_meta']['holder']['meta_description'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Meta description'),
+        '#default_value' => isset($saved_tags['meta_description']) ? $saved_tags['meta_description'] : '',
+        '#rows' => 3,
+        '#description' => t('One or two sentence described this page (160-200 characters max. without any HTML markup.)'),
+      );
+
+      $form['seo_meta']['holder']['more'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('More'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+      );    
+      $form['seo_meta']['holder']['more']['meta_robots'] = array(
+        '#type' => 'checkboxes',
+        '#title' => t('Meta robots'),
+        '#options' => backdrop_map_assoc(array('NOINDEX', 'NOFOLLOW', 'NOARCHIVE', 'NOODP', 'NOYDIR', 'NOSNIPPET')),
+        '#default_value' => isset($saved_tags['meta_robots']) ? unserialize($saved_tags['meta_robots']) : array(),
+        '#description' => 'Search engines assume "INDEX" and "FOLLOW" unless these are specifically disabled above.',
+      );
+      $form['seo_meta']['holder']['more']['rel_canonical'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Canonical URL'),
+        '#default_value' => isset($saved_tags['rel_canonical']) ? $saved_tags['rel_canonical'] : '',
+        '#description' => t("Use a relative URL without the initial slash for current default domain or full URL."
+          . " By default (if no value) this will automatically use URL of this page."),
+      );
+
+      $form['seo_meta']['holder']['open_graph'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Open Graph'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+      );
+      $form['seo_meta']['holder']['open_graph']['meta_og_title'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Open Graph title'),
+        '#default_value' => isset($saved_tags['meta_og_title']) ? $saved_tags['meta_og_title'] : '',
+        '#description' => t('The title of this page/article as rendered on Facebook (without any branding such as your site name.)'),
+      );
+      $form['seo_meta']['holder']['open_graph']['meta_og_description'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Open Graph description'),
+        '#default_value' => isset($saved_tags['meta_og_description']) ? $saved_tags['meta_og_description'] : '',
+        '#rows' => 3,
+        '#description' => t('A brief description of the content, usually between 2 and 4 sentences (without HTML markup). This will displayed below the title of the post on Facebook.'),
+      );
+      $form['seo_meta']['holder']['open_graph']['meta_og_type'] = array(
+        '#title' => t('Open Graph type'),
+        '#type' => 'select',
+        '#options' => array(
+          '' => t('Select type'),
+          'website' => 'website',
+          'article' => 'article',
+          'product' => 'product',
+          'profile' => 'profile',
+        ),
+        '#default_value' => isset($saved_tags['meta_og_type']) ? $saved_tags['meta_og_type'] : '',
+        '#description' => t('The type of media of your content.'),
+      );
+      $form['seo_meta']['holder']['open_graph']['meta_og_image_fid'] = array(
+        '#title' => t('Upload image that appears when someone shares the content to Facebook.'),
+        '#type' => 'managed_file',
+        '#upload_location' => 'public://' . $config->get('meta_og_images_dir'),
+        '#default_value' => isset($saved_tags['meta_og_image_fid']) ? $saved_tags['meta_og_image_fid'] : '',
+        '#upload_validators' => array(
+          'file_validate_extensions' => array('gif png jpg jpeg'),
+          'file_validate_size' => array(file_upload_max_size()),
+        ),
+      );
+      $form['seo_meta']['holder']['open_graph']['meta_og_site_name'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Site name'),
+        '#default_value' => isset($saved_tags['meta_og_title']) ? $saved_tags['meta_og_title'] : '',
+        '#description' => t('The name of your website (such as IMDb, not imdb.com).'),
+      );
+
+      $form['seo_meta']['holder']['twitter'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Twitter'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+      );
+      $form['seo_meta']['holder']['twitter']['meta_tw_card'] = array(
+        '#title' => t('Twitter Card type'),
+        '#type' => 'select',
+        '#options' => array(
+          '' => t('Select card type'),
+          'summary' => 'Summary Card',
+          'summary_large_image' => 'Summary Card with Large Image',
+          'photo' => 'Photo Card',
+          'gallery' => 'Gallery Card',
+          'product' => 'Product Card',
+        ),
+        '#default_value' => isset($saved_tags['meta_tw_card']) ? $saved_tags['meta_tw_card'] : '',
+        '#description' => t('The card type.'),
+      );
+      $form['seo_meta']['holder']['twitter']['meta_tw_site'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Site'),
+        '#default_value' => isset($saved_tags['meta_og_title']) ? $saved_tags['meta_og_title'] : '',
+        '#description' => t('@username of website.'),
+      );
+      $form['seo_meta']['holder']['twitter']['meta_tw_creator'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Creator'),
+        '#default_value' => isset($saved_tags['meta_og_title']) ? $saved_tags['meta_og_title'] : '',
+        '#description' => t('@username of content creator.'),
+      );
+      $form['seo_meta']['holder']['twitter']['div'] = array(
+        '#markup' => '<div class="description">' . t('Note: When the Twitter card processor looks for tags on your page, 
+           it first checks for the Twitter property, and if not present, 
+           falls back to the supported Open Graph property (for example site URL, title, description and image). 
+           This allows for both to be defined on the page independently, and minimizes 
+           the amount of duplicate markup required to describe your content and experience.') . '</div>',
       );
     }
-    $form['seo_meta']['holder']['meta_description'] = array(
-      '#type' => 'textarea',
-      '#title' => t('Meta description'),
-      '#default_value' => isset($saved_tags['meta_description']) ? $saved_tags['meta_description'] : '',
-      '#rows' => 3,
-      '#description' => t('One or two sentence described this page (160-200 characters max. without any HTML markup.)'),
-    );
-    
-    $form['seo_meta']['holder']['more'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('More'),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
-    );    
-    $form['seo_meta']['holder']['more']['meta_robots'] = array(
-      '#type' => 'checkboxes',
-      '#title' => t('Meta robots'),
-      '#options' => backdrop_map_assoc(array('NOINDEX', 'NOFOLLOW', 'NOARCHIVE', 'NOODP', 'NOYDIR', 'NOSNIPPET')),
-      '#default_value' => isset($saved_tags['meta_robots']) ? unserialize($saved_tags['meta_robots']) : array(),
-      '#description' => 'Search engines assume "INDEX" and "FOLLOW" unless these are specifically disabled above.',
-    );
-    $form['seo_meta']['holder']['more']['rel_canonical'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Canonical URL'),
-      '#default_value' => isset($saved_tags['rel_canonical']) ? $saved_tags['rel_canonical'] : '',
-      '#description' => t("Use a relative URL without the initial slash for current default domain or full URL."
-        . " By default (if no value) this will automatically use URL of this page."),
-    );
-    
-    $form['seo_meta']['holder']['open_graph'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Open Graph'),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
-    );
-    $form['seo_meta']['holder']['open_graph']['meta_og_title'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Open Graph title'),
-      '#default_value' => isset($saved_tags['meta_og_title']) ? $saved_tags['meta_og_title'] : '',
-      '#description' => t('The title of this page/article as rendered on Facebook (without any branding such as your site name.)'),
-    );
-    $form['seo_meta']['holder']['open_graph']['meta_og_description'] = array(
-      '#type' => 'textarea',
-      '#title' => t('Open Graph description'),
-      '#default_value' => isset($saved_tags['meta_og_description']) ? $saved_tags['meta_og_description'] : '',
-      '#rows' => 3,
-      '#description' => t('A brief description of the content, usually between 2 and 4 sentences (without HTML markup). This will displayed below the title of the post on Facebook.'),
-    );
-    $form['seo_meta']['holder']['open_graph']['meta_og_type'] = array(
-      '#title' => t('Open Graph type'),
-      '#type' => 'select',
-      '#options' => array(
-        '' => t('Select type'),
-        'website' => 'website',
-        'article' => 'article',
-        'product' => 'product',
-        'profile' => 'profile',
-      ),
-      '#default_value' => isset($saved_tags['meta_og_type']) ? $saved_tags['meta_og_type'] : '',
-      '#description' => t('The type of media of your content.'),
-    );
-    $form['seo_meta']['holder']['open_graph']['meta_og_image_fid'] = array(
-      '#title' => t('Upload image that appears when someone shares the content to Facebook.'),
-      '#type' => 'managed_file',
-      '#upload_location' => 'public://' . $config->get('meta_og_images_dir'),
-      '#default_value' => isset($saved_tags['meta_og_image_fid']) ? $saved_tags['meta_og_image_fid'] : '',
-      '#upload_validators' => array(
-        'file_validate_extensions' => array('gif png jpg jpeg'),
-        'file_validate_size' => array(file_upload_max_size()),
-      ),
-    );
-    $form['seo_meta']['holder']['open_graph']['meta_og_site_name'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Site name'),
-      '#default_value' => isset($saved_tags['meta_og_title']) ? $saved_tags['meta_og_title'] : '',
-      '#description' => t('The name of your website (such as IMDb, not imdb.com).'),
-    );
-
-    $form['seo_meta']['holder']['twitter'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Twitter'),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
-    );
-    $form['seo_meta']['holder']['twitter']['meta_tw_card'] = array(
-      '#title' => t('Twitter Card type'),
-      '#type' => 'select',
-      '#options' => array(
-        '' => t('Select card type'),
-        'summary' => 'Summary Card',
-        'summary_large_image' => 'Summary Card with Large Image',
-        'photo' => 'Photo Card',
-        'gallery' => 'Gallery Card',
-        'product' => 'Product Card',
-      ),
-      '#default_value' => isset($saved_tags['meta_tw_card']) ? $saved_tags['meta_tw_card'] : '',
-      '#description' => t('The card type.'),
-    );
-    $form['seo_meta']['holder']['twitter']['meta_tw_site'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Site'),
-      '#default_value' => isset($saved_tags['meta_og_title']) ? $saved_tags['meta_og_title'] : '',
-      '#description' => t('@username of website.'),
-    );
-    $form['seo_meta']['holder']['twitter']['meta_tw_creator'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Creator'),
-      '#default_value' => isset($saved_tags['meta_og_title']) ? $saved_tags['meta_og_title'] : '',
-      '#description' => t('@username of content creator.'),
-    );
-    $form['seo_meta']['holder']['twitter']['div'] = array(
-      '#markup' => '<div class="description">' . t('Note: When the Twitter card processor looks for tags on your page, 
-         it first checks for the Twitter property, and if not present, 
-         falls back to the supported Open Graph property (for example site URL, title, description and image). 
-         This allows for both to be defined on the page independently, and minimizes 
-         the amount of duplicate markup required to describe your content and experience.') . '</div>',
-    );
   }
 }
 

@@ -305,8 +305,7 @@ function seo_meta_settings_homepage_form($form, &$form_state) {
     );
 
     $form['description'] = array(
-      '#markup' => t('This site have more than one content language enabled, '
-          . 'so you can define meta tags for homepages on each of them.'),
+      '#markup' => t('This site have more than one content language enabled and you can define meta tags for front pages on each of them.'),
       '#weight' => -12,
     );
    
@@ -316,7 +315,7 @@ function seo_meta_settings_homepage_form($form, &$form_state) {
       $form_path = 'admin/config/search/seo_meta/home/' . $langcode;
       
       $form[$langcode . '_homepage'] =array(
-        '#markup' => '<p>' . l(t('Meta tags for @lang @def homepage.', array('@lang' => $lang->name, '@def' => $site_default_lang)), $form_path, array()) . '</p>',
+        '#markup' => '<p>' . l(t('Meta tags for @lang @def front page.', array('@lang' => $lang->name, '@def' => $site_default_lang)), $form_path, array()) . '</p>',
         '#weight' => $lang->default ? -11 : $lang->weight,
       );
     }
@@ -467,7 +466,7 @@ function seo_meta_custom_item_tags_edit($form, &$form_state) {
       return;
     }    
     
-    $subtitle = t('For <em>' . language_name($page_langcode) . '</em> homepage');
+    $subtitle = t('For <em>' . language_name($page_langcode) . '</em> front page');
   }
   else{
     $page_name = $args[5];
@@ -727,7 +726,7 @@ function seo_meta_custom_item_tags_edit_submit($form, &$form_state) {
     file_usage_add($file, 'seo_meta', 'user', $user->uid); 
   }
   
-  backdrop_set_message(t('Tags for page have been saved.'));
+  backdrop_set_message(t('Tags for page saved successfully.'));
 }
 
 /**
