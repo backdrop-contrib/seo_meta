@@ -131,7 +131,7 @@ function seo_meta_config_info() {
 /**
  * Implements hook_form_alter().
  *
- * Adds fieldsets to the node create/edit form as topmost vertical tab.
+ * Adds fieldset to the node create/edit form as vertical tab.
  *
  */
 function seo_meta_form_alter(&$form, $form_state, $form_id) {
@@ -509,7 +509,7 @@ function seo_meta_caller() {
     $caller->langcode = $language->langcode;
   }
   else {
-    $caller->langcode = 'und';
+    $caller->langcode = key(language_list(TRUE));
   }
 
   if (arg(0) == 'node' && is_numeric(arg(1))) {
