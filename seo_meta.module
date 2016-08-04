@@ -342,7 +342,7 @@ function seo_meta_form_alter(&$form, $form_state, $form_id) {
 function seo_meta_form_validate($form, &$form_state) {
   
   if (isset($form['#node']) && is_object($form['#node'])) {
-    if ($form_state['values']['seo_meta']['enabled'] == 1) {
+    if (isset($form_state['values']['seo_meta']['enabled']) && $form_state['values']['seo_meta']['enabled'] == 1) {
       
       $seo_meta_values = $form_state['values']['seo_meta'];
 
@@ -430,7 +430,7 @@ function seo_meta_node_update(Node $node) {
 
   $sm_id = is_object($result) ? $sm_id = $result->sm_id : NULL;
 
-  if ($node->seo_meta['enabled']) {
+  if (isset($node->seo_meta['enabled']) && $node->seo_meta['enabled'] == 1) {
     
     $data = seo_meta_get_node_data($node);
     
