@@ -754,10 +754,12 @@ function seo_meta_preprocess_page(&$variables) {
   if (path_is_admin($_GET['q'])) {
     return FALSE;
   }
-  
+
+  $is_node_page = arg(0) == 'node' && is_numeric(arg(1));
+   
   $status = backdrop_get_http_header('status');
-  // awoid main errors status pages
-  if (in_array($status, array('404 Not Found', '403 Forbidden'))) {
+  // awoid non-custom http status errors pages
+  if (in_array($status, array('404 Not Found', '403 Forbidden')) && !$is_node_page) {
     return FALSE;
   }
 
