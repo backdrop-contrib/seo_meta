@@ -408,7 +408,7 @@ function seo_meta_get_node_data(Node $node) {
  */
 function seo_meta_node_insert(Node $node) {
 
-  if ($node->seo_meta['enabled']) {
+  if (isset($node->seo_meta['enabled']) && $node->seo_meta['enabled'] == 1) {
     
     $data = seo_meta_get_node_data($node);
     
