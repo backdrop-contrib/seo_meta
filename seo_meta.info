@@ -4,4 +4,4 @@ package = SEO
 backdrop = 1.x
 type = module
 configure = admin/config/search/seo_meta
-version = 1.0.4
+version = 1.0.5
