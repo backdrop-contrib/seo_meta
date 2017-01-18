@@ -32,9 +32,9 @@ function seo_meta_settings_form() {
   $form['description'] = array(
     '#prefix' => '<div>',
     '#markup' => 'This module provides an interface for adding meta tags to pages.'
-    . '<br />Values of meta tags defined below will be added as default to pages where meta tags was not specified.'
+    . '<br />Values of meta tags defined below will be added as default to the pages where meta tags not defined.'
     . '<br />Defaults can be overrided:'
-    . '<br />&nbsp;- for any node page - using vertical tab "SEO meta tags" on node edit form;</em>'
+    . '<br />&nbsp;- for node pages - using vertical tab "SEO meta tags" on the node edit form;</em>'
     . '<br />&nbsp;- for views, taxonomy or home pages - using corresponding tabs of this form.',
     '#suffix' => '</div>',
   );
@@ -81,7 +81,7 @@ function seo_meta_settings_form() {
     '#default_value' => isset($saved_tags['meta_description']) ? $saved_tags['meta_description'] : '',
     '#rows' => 3,
     '#cols' => 30,
-    '#description' => t('One or two sentence described this site (160-200 characters max. without any HTML markup.).'),
+    '#description' => t('One or two sentence described this site (160-200 characters max. without any HTML markup).'),
   );
   $form['basic']['meta_robots'] = array(
     '#type' => 'checkboxes',
@@ -92,7 +92,7 @@ function seo_meta_settings_form() {
   );
   $form['basic']['fix_favicon'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Fix shortcut icon link "rel" and "type" attributes'),
+    '#title' => t('Change shortcut icon link "rel" and "type" attributes'),
     '#default_value' => $config->get('fix_favicon'),
     '#description' => t('If this option is selected, a link to a site icon will change, as in the example below, from:') . 
     '<br />' . '&lt;link rel="shortcut icon" href="http://example.com/core/misc/favicon.ico" type="image/vnd.microsoft.icon" /&gt;'.
@@ -290,6 +290,8 @@ function seo_meta_settings_form_submit($form, &$form_state) {
  * Form wrapper for homepage
  */
 function seo_meta_settings_homepage_form($form, &$form_state) {
+  $sub_path = seo_meta_menu_sub_path();
+
   
   // We work with enabled languages only
   $site_langs = language_list(TRUE);
@@ -297,7 +299,7 @@ function seo_meta_settings_homepage_form($form, &$form_state) {
   if (count($site_langs) == 1) {
 
     $langcode = key($site_langs);
-    backdrop_goto('admin/config/search/seo_meta/home/' . $langcode);
+    backdrop_goto('admin/config/' . $sub_path . '/seo_meta/home/' . $langcode);
   }
   else {
     $form['#attached']['css'] = array(
@@ -312,7 +314,7 @@ function seo_meta_settings_homepage_form($form, &$form_state) {
     foreach ($site_langs as $lang) {
       $langcode = $lang->langcode;
       $site_default_lang = $lang->default ? t('(site default language)') : '';
-      $form_path = 'admin/config/search/seo_meta/home/' . $langcode;
+      $form_path = 'admin/config/' . $sub_path . '/seo_meta/home/' . $langcode;
       
       $form[$langcode . '_homepage'] =array(
         '#markup' => '<p>' . l(t('Meta tags for @lang @def front page.', array('@lang' => $lang->name, '@def' => $site_default_lang)), $form_path, array()) . '</p>',
@@ -328,7 +330,7 @@ function seo_meta_settings_homepage_form($form, &$form_state) {
  * Form wrapper for views pages
  */
 function seo_meta_settings_views_form($form, &$form_state) {
-
+  $sub_path    = seo_meta_menu_sub_path();
   $views_pages = seo_meta_get_views_pages();
 
   $form['description'] = array(
@@ -345,7 +347,7 @@ function seo_meta_settings_views_form($form, &$form_state) {
       foreach ($page as $view_name => $page_path) {
         $form['views_fieldset']['test_' . $view_name] = array(
           
-          '#markup' => l($view_name, 'admin/config/search/seo_meta/views/' . $view_name, array('attributes' => array('title' => t('Click to edit meta tags for this page.')))). '<br />',
+          '#markup' => l($view_name, 'admin/config/' . $sub_path . '/seo_meta/views/' . $view_name, array('attributes' => array('title' => t('Click to edit meta tags for this page.')))). '<br />',
         );
       }
     }
@@ -363,7 +365,7 @@ function seo_meta_settings_views_form($form, &$form_state) {
  * Form wrapper for taxonomy pages
  */
 function seo_meta_settings_taxonomy_form($form, &$form_state) {
-
+  $sub_path = seo_meta_menu_sub_path();
   $vocabularies = array('-' => t('None selected'));
   $vocs = taxonomy_get_vocabularies();
   foreach ($vocs as $m_name => $v_obj) {
@@ -413,7 +415,7 @@ function seo_meta_settings_taxonomy_form($form, &$form_state) {
         
         $form['terms_fieldset'][$key][$selected] = array(
 
-          '#markup' => l($term_obj->name, 'admin/config/search/seo_meta/taxonomy/' . $term_obj->name, array('attributes' => array('title' => t('Click to edit meta tags for this page.')))). '<br />',
+          '#markup' => l($term_obj->name, 'admin/config/' . $sub_path . '/seo_meta/taxonomy/' . $term_obj->name, array('attributes' => array('title' => t('Click to edit meta tags for this page.')))). '<br />',
         );
       }
     }

@@ -3,5 +3,5 @@ description = Provides customized meta tags and page title for search engines.
 package = SEO
 backdrop = 1.x
 type = module
-configure = admin/config/search/seo_meta
-version = 1.0.5
+configure = admin/config/metadata/seo_meta
+version = 1.0.6

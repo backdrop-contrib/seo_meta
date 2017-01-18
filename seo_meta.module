@@ -30,9 +30,6 @@ function seo_meta_permission() {
     'administer seo meta settings' => array(
       'title' => t('Administer SEO Meta Tags settings')
     ),
-    'edit seo meta tags' => array(
-      'title' => t('Edit SEO Meta Tags fields')
-    ),
   );
 }
 
@@ -41,9 +38,11 @@ function seo_meta_permission() {
  *
  */
 function seo_meta_menu() {
+   
+  $sub_path = seo_meta_menu_sub_path();
   $items = array();
 
-  $items['admin/config/search/seo_meta'] = array(
+  $items['admin/config/' . $sub_path . '/seo_meta'] = array(
     'type' => MENU_NORMAL_ITEM,
     'title' => 'SEO Meta Tags',
     'page callback' => 'backdrop_get_form',
@@ -53,13 +52,13 @@ function seo_meta_menu() {
     'access arguments' => array('administer seo meta settings'),
   );
   
-  $items['admin/config/search/seo_meta/default'] = array(
+  $items['admin/config/' . $sub_path . '/seo_meta/default'] = array(
     'title' => 'Default meta tags',
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => 1,
   );
 
-  $items['admin/config/search/seo_meta/home'] = array(
+  $items['admin/config/' . $sub_path . '/seo_meta/home'] = array(
     'title' => 'Front page',
     'type' => MENU_LOCAL_TASK,
     'page arguments' => array('seo_meta_settings_homepage_form'),
@@ -69,7 +68,7 @@ function seo_meta_menu() {
     'weight' => 2,
   );
 
-  $items['admin/config/search/seo_meta/views'] = array(
+  $items['admin/config/' . $sub_path . '/seo_meta/views'] = array(
     'title' => 'Views pages',
     'type' => MENU_LOCAL_TASK,
     'page arguments' => array('seo_meta_settings_views_form'),
@@ -79,7 +78,7 @@ function seo_meta_menu() {
     'weight' => 3,
   );
   
-  $items['admin/config/search/seo_meta/taxonomy'] = array(
+  $items['admin/config/' . $sub_path . '/seo_meta/taxonomy'] = array(
     'title' => 'Taxonomy pages',
     'type' => MENU_LOCAL_TASK,
     'page arguments' => array('seo_meta_settings_taxonomy_form'),
@@ -89,7 +88,7 @@ function seo_meta_menu() {
     'weight' => 4,
   );
   
-  $items['admin/config/search/seo_meta/home/%'] = array(
+  $items['admin/config/' . $sub_path . '/seo_meta/home/%'] = array(
     'title' => 'Front page meta tags edit form',
     'type' => MENU_SUGGESTED_ITEM,
     'page arguments' => array('seo_meta_custom_item_tags_edit'),
@@ -97,7 +96,7 @@ function seo_meta_menu() {
     'access arguments' => array('administer seo meta settings'),
   );
   
-  $items['admin/config/search/seo_meta/taxonomy/%'] = array(
+  $items['admin/config/' . $sub_path . '/seo_meta/taxonomy/%'] = array(
     'title' => 'Taxonomy page meta tags edit form',
     'type' => MENU_SUGGESTED_ITEM,
     'page arguments' => array('seo_meta_custom_item_tags_edit'),
@@ -105,7 +104,7 @@ function seo_meta_menu() {
     'access arguments' => array('administer seo meta settings'),
   );
   
-  $items['admin/config/search/seo_meta/views/%'] = array(
+  $items['admin/config/' . $sub_path . '/seo_meta/views/%'] = array(
     'title' => 'Views page meta tags edit form',
     'type' => MENU_SUGGESTED_ITEM,
     'page arguments' => array('seo_meta_custom_item_tags_edit'),
@@ -135,6 +134,8 @@ function seo_meta_config_info() {
  *
  */
 function seo_meta_form_alter(&$form, $form_state, $form_id) {
+
+  $sub_path = seo_meta_menu_sub_path();
 
   if (isset($form['#node']) && $form['#node']->type . '_node_form' == $form_id) {
 
@@ -175,7 +176,7 @@ function seo_meta_form_alter(&$form, $form_state, $form_id) {
         '#suffix' => '</div>',
         '#markup' => t('This node is set as site <a href="@front">front page</a>, '
             . 'so for this page <a href="@link">front page meta tags</a> will be used.',
-            array('@link' => url('admin/config/search/seo_meta/home'),'@front' => url('admin/config/system/site-information'))),
+            array('@link' => url('admin/config/' . $sub_path . '/seo_meta/home'),'@front' => url('admin/config/system/site-information'))),
       );
     }
     else {
@@ -183,7 +184,7 @@ function seo_meta_form_alter(&$form, $form_state, $form_id) {
         '#type' => 'checkbox',
         '#title' => t('Define tags for page of this node'),
         '#default_value' => !empty($saved_tags),
-        '#description' => t('Optional. If not enabled, <a href="@url">default values</a> will be used', array('@url' => url('admin/config/search/base_meta'))),
+        '#description' => t('Optional. If not enabled, <a href="@url">default values</a> will be used', array('@url' => url('admin/config/' . $sub_path . '/seo_meta'))),
       );
       $form['seo_meta']['holder'] = array(
         '#type' => 'container',
@@ -867,4 +868,18 @@ function seo_meta_get_tag_value($tag_name = '', $ce_type = '', $ce_id = '') {
   }
   
   return $tag_value;
+}
+
+/**
+ * Helper for BD >= 1.6.0 - menu subpath changed from 'search' to 'metadata;
+ * @return string
+ */
+function seo_meta_menu_sub_path() {
+  $sub_path = 'search';
+  $backdrop_version = explode('.', BACKDROP_VERSION);
+  if ($backdrop_version[0] == 1 && $backdrop_version[1] > 5) {
+    $sub_path = 'metadata';
+  } 
+  
+  return $sub_path;
 } 
