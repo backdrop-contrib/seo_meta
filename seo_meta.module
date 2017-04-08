@@ -362,7 +362,7 @@ function seo_meta_form_validate($form, &$form_state) {
       
       if ($empty_tags && !$checked_boxes) {
         form_set_error('',
-          t('You must fill some values in the form "SEO meta tags" or uncheck checkbox "Define tags for page of this node".'));
+          t('Please fill out some fields in the form "SEO meta tags" or uncheck checkbox "Define tags for page of this node".'));
       }
     }
   }

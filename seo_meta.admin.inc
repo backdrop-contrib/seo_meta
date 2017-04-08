@@ -674,7 +674,7 @@ function seo_meta_custom_item_tags_edit_validate($form, &$form_state) {
   }
 
   if ($empty_tags && !$checked_boxes) {
-    form_set_error('', t('You must fill some values to the fields, nothing to save!'));
+    form_set_error('', t('Please fill out some values to the fields, nothing to save!'));
   }
 }
 
