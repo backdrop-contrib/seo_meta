@@ -152,7 +152,7 @@ function seo_meta_form_alter(&$form, $form_state, $form_id) {
     $form['seo_meta'] = array(
       '#type' => 'fieldset',
       '#title' => t('SEO meta tags'),
-      '#access' => user_access('edit base meta tags'),
+      '#access' => user_access('administer seo meta settings'),
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
       '#tree' => TRUE,

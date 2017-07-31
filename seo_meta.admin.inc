@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Admin forms to manage meta tags
+ * Administration forms to manage meta tags
  *
  */
 
@@ -503,7 +503,7 @@ function seo_meta_custom_item_tags_edit($form, &$form_state) {
   $form['seo_meta'] = array(
     '#type' => 'fieldset',
     '#title' => t('Page title and meta tags'),
-    '#access' => user_access('edit base meta tags'),
+    '#access' => user_access('administer seo meta settings'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
