@@ -5,6 +5,10 @@ Provide "meta tags" and custom tag "title" for your site's pages.
 Search engine optimization assumed using an essential set of meta tags to help improve search ranking for your site.
 Meta tags may be used to control the display of content across popular social networks, such as Facebook or Twitter.
 
+Please note
+-----------
+This module is intended to replace module [Base Meta: Page Title And Meta Tags] (https://backdropcms.org/project/base_meta) as refactored and extended successor, without backward compatibility.
+
 Features
 --------
 
@@ -87,8 +91,3 @@ issue queue at https://github.com/backdrop-contrib/seo_meta/issues.
 Credits
 ------------------
 Tested with the valuable help of **bd0bd** (https://github.com/bd0bd)
-
-Please note
-----------------------
-
-This module intended for replacement of module [Base Meta: Page Title And Meta Tags] (https://backdropcms.org/project/base_meta) as refactored and extended successor, without backward compatibility.

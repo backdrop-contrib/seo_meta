@@ -654,7 +654,7 @@ function seo_meta_custom_item_tags_edit($form, &$form_state) {
 
 /**
  * Implements hook_validate().
- * Just check if at least one field from basics is not empty. 
+ * 
  */
 function seo_meta_custom_item_tags_edit_validate($form, &$form_state) {
   $seo_meta_values = $form_state['values'];
@@ -675,6 +675,15 @@ function seo_meta_custom_item_tags_edit_validate($form, &$form_state) {
 
   if ($empty_tags && !$checked_boxes) {
     form_set_error('', t('Please fill out some values to the fields, nothing to save!'));
+  }
+  
+  if (backdrop_strlen($seo_meta_values['meta_description']) > 254) {
+    form_set_error('meta_description',
+      t('Text you trying fill out to field "Meta description" is too long!'));
+  }
+  if (backdrop_strlen($seo_meta_values['meta_og_description']) > 254) {
+    form_set_error('meta_og_description',
+      t('Text you trying fill out to field "Open Graph description" is too long!'));
   }
 }
 
