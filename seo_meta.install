@@ -167,3 +167,11 @@ function seo_meta_schema() {
 
   return $schema;
 }
+/**
+ *  Add and initialize new variable
+ */
+function seo_meta_update_1000() {
+  $config = config('seo_meta.settings');
+  $config->set('use_og_url', 0);
+  $config->save();  
+}

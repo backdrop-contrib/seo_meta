@@ -285,7 +285,7 @@ function seo_meta_form_alter(&$form, $form_state, $form_id) {
       $form['seo_meta']['holder']['open_graph']['meta_og_site_name'] = array(
         '#type' => 'textfield',
         '#title' => t('Site name'),
-        '#default_value' => isset($saved_tags['meta_og_title']) ? $saved_tags['meta_og_title'] : '',
+        '#default_value' => isset($saved_tags['meta_og_site_name']) ? $saved_tags['meta_og_site_name'] : '',
         '#description' => t('The name of your website (such as IMDb, not imdb.com).'),
       );
 
@@ -312,13 +312,13 @@ function seo_meta_form_alter(&$form, $form_state, $form_id) {
       $form['seo_meta']['holder']['twitter']['meta_tw_site'] = array(
         '#type' => 'textfield',
         '#title' => t('Site'),
-        '#default_value' => isset($saved_tags['meta_og_title']) ? $saved_tags['meta_og_title'] : '',
+        '#default_value' => isset($saved_tags['meta_tw_site']) ? $saved_tags['meta_tw_site'] : '',
         '#description' => t('@username of website.'),
       );
       $form['seo_meta']['holder']['twitter']['meta_tw_creator'] = array(
         '#type' => 'textfield',
         '#title' => t('Creator'),
-        '#default_value' => isset($saved_tags['meta_og_title']) ? $saved_tags['meta_og_title'] : '',
+        '#default_value' => isset($saved_tags['meta_tw_creator']) ? $saved_tags['meta_tw_creator'] : '',
         '#description' => t('@username of content creator.'),
       );
       $form['seo_meta']['holder']['twitter']['div'] = array(
@@ -485,7 +485,7 @@ function seo_meta_html_head_alter(&$head_elements) {
   
   $config = config('seo_meta.settings');
   $fix_favicon = $config->get('fix_favicon');
-
+  
   foreach ($head_elements as $key => $element) {
 
     if (isset($element['#attributes']['rel']) && $element['#attributes']['rel'] == 'canonical') {
@@ -535,7 +535,7 @@ function seo_meta_caller() {
     $caller->type = TYPE_VIEW;
     $caller->id = $view_name;
   }
-  // homepage as type should overwrite original content entry (node, view...) if it defined as FP
+  // front(home)page as type should overwrite original content entry (node, view...) if it defined as FP
   if (backdrop_is_front_page()) {
     $caller->is_front = TRUE;
     $caller->type = TYPE_HOMEPAGE;
@@ -738,7 +738,7 @@ function seo_meta_build_page_tags() {
         }
         else {
           $attribute = 'property';
-          $weight = $weight + 15;
+          $weight = $weight + 75;
           $tag = str_replace('meta_og_', 'og:', $tag);
         }
         
@@ -771,8 +771,9 @@ function seo_meta_preprocess_page(&$variables) {
     return FALSE;
   }
 
-  $config = config('seo_meta.settings');
-  $caller = seo_meta_caller();
+  $config     = config('seo_meta.settings');
+  $use_og_url = $config->get('use_og_url');
+  $caller     = seo_meta_caller();
 
   $seo_meta_title = is_object($caller) ? seo_meta_get_tag_value('page_title', $caller->type, $caller->id) : '';
   $head_site_name = $variables['head_title_array']['name'];
@@ -795,7 +796,7 @@ function seo_meta_preprocess_page(&$variables) {
     }
   }
 
-  // Add canonical URL to view and homepages
+  // Add canonical URL to views and homepages overriding
   if (is_object($caller)) {
     
     if ($caller->type == TYPE_VIEW || $caller->type == TYPE_HOMEPAGE) {
@@ -806,7 +807,30 @@ function seo_meta_preprocess_page(&$variables) {
       }
     }
   }
+  
+  // add og:url if selected
+  if ($use_og_url) {
+    $current_path = current_path();
+    
+    if ($current_path !== 'node') {
+      $current_url = url($current_path, array('absolute' => TRUE));
+    }
+    else {
+      $current_url = url('/', array('absolute' => TRUE));      
+    }
 
+    backdrop_add_html_head(
+      array(
+        '#tag' => 'meta',
+        '#attributes' => array(
+          'property' => 'og:url',
+          'content' => $current_url,
+        ),
+        '#weight' => TAG_WEIGHT + 65,
+      ),
+      'seo_meta_url' 
+    );
+  }
   // Add rest of meta tags
   seo_meta_build_page_tags();
 }
@@ -878,7 +902,7 @@ function seo_meta_get_tag_value($tag_name = '', $ce_type = '', $ce_id = '') {
 }
 
 /**
- * Helper for BD >= 1.6.0 - menu subpath changed from 'search' to 'metadata;
+ * Helper for BD >= 1.6.0 - menu sub-path was changed from 'search' to 'metadata;
  * @return string
  */
 function seo_meta_menu_sub_path() {

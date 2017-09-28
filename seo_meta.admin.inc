@@ -121,6 +121,13 @@ function seo_meta_settings_form() {
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
+  $form['open_graph']['use_og_url'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use "og:url" meta property.'),
+    '#default_value' => $config->get('use_og_url'),
+    '#description' => t('If selected - "og:url" meta property should be auto-generated for any page with same value as "canonical URL" of page.'),
+  );
+  
   $form['open_graph']['meta_og_title'] = array(
     '#type' => 'textfield',
     '#title' => t('Open Graph title'),
@@ -239,6 +246,7 @@ function seo_meta_settings_form_submit($form, &$form_state) {
   
   $config->set('base_canonical_url', trim($form_state['values']['base_canonical_url']));
   $config->set('use_keywords',       $form_state['values']['use_keywords']);
+  $config->set('use_og_url',         $form_state['values']['use_og_url']);
   $config->set('fix_favicon',        $form_state['values']['fix_favicon']);
   $config->set('append_site_name',   $form_state['values']['append_site_name']);
   $config->set('site_name_divider',  trim($form_state['values']['site_name_divider']));
@@ -597,7 +605,7 @@ function seo_meta_custom_item_tags_edit($form, &$form_state) {
   $form['seo_meta']['open_graph']['meta_og_site_name'] = array(
     '#type' => 'textfield',
     '#title' => t('Site name'),
-    '#default_value' => isset($saved_tags['meta_og_title']) ? $saved_tags['meta_og_title'] : '',
+    '#default_value' => isset($saved_tags['meta_og_site_name']) ? $saved_tags['meta_og_site_name'] : '',
     '#description' => t('The name of your website (such as IMDb, not imdb.com).'),
   );
 
