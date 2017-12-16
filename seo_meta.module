@@ -12,13 +12,15 @@ define('TYPE_TAXONOMY', 4);
 define('TAG_WEIGHT',  100);
 
 /**
- * Implements hook_help().
- * 
+ * Implements hook_config_info().
  */
-function seo_meta_help($path, $arg) {
-  if ($path == 'admin/help#seo_meta') {
-    return t('SEO Meta Tags module provides customized page title and meta tags for search engines.');
-  }
+function seo_meta_config_info() {
+  $prefixes['seo_meta.settings'] = array(
+    'label' => t('SEO Meta Tags'),
+    'group' => t('Configuration'),
+  );
+  
+  return $prefixes;
 }
 
 /**
@@ -113,18 +115,6 @@ function seo_meta_menu() {
   );
   
   return $items;
-}
-
-/**
- * Implements hook_config_info().
- */
-function seo_meta_config_info() {
-  $prefixes['seo_meta.settings'] = array(
-    'label' => t('SEO Meta Tags'),
-    'group' => t('Configuration'),
-  );
-  
-  return $prefixes;
 }
 
 /**
@@ -360,16 +350,16 @@ function seo_meta_form_validate($form, &$form_state) {
       
       if ($empty_tags && !$checked_boxes) {
         form_set_error('',
-          t('Please fill out some fields in the form "SEO meta tags" or uncheck checkbox "Define tags for page of this node".'));
+          t('Please fill in some fields in the form "SEO meta tags" or uncheck checkbox "Define tags for page of this node".'));
       }
       
       if (backdrop_strlen($seo_meta_values['meta_description']) > 254) {
         form_set_error('seo_meta][meta_description',
-          t('Text you trying fill out to field "Meta description" (under "SEO meta tags" tab) is too long!'));
+          t('Text you trying fill in to field "Meta description" (under "SEO meta tags" tab) is too long!'));
       }
       if (backdrop_strlen($seo_meta_values['open_graph']['meta_og_description']) > 254) {
         form_set_error('seo_meta][open_graph][meta_og_description',
-          t('Text you trying fill out to field "Open Graph description" (under "SEO meta tags" tab > "Open Graph") is too long!'));
+          t('Text you trying fill in to field "Open Graph description" (under "SEO meta tags" tab > "Open Graph") is too long!'));
       }
     }
   }
@@ -417,6 +407,13 @@ function seo_meta_get_node_data(Node $node) {
 function seo_meta_node_insert(Node $node) {
 
   if (isset($node->seo_meta['enabled']) && $node->seo_meta['enabled'] == 1) {
+    // save OG image as permanent file 
+    if (!empty($node->seo_meta['open_graph']['meta_og_image_fid'])) {
+      $file = file_load($node->seo_meta['open_graph']['meta_og_image_fid']);
+      $file->status = FILE_STATUS_PERMANENT;
+      file_save($file);
+      file_usage_add($file, 'seo_meta', 'node', $node->nid); 
+    }
     
     $data = seo_meta_get_node_data($node);
     
@@ -453,20 +450,6 @@ function seo_meta_node_update(Node $node) {
     if ($sm_id) {
       seo_meta_record_delete(TYPE_NODE, $node->nid);
     }
-  }
-}
-
-/**
- * Implements hook_node_presave().
- * Save OG image as permanent
- */
-function seo_meta_node_presave(Node $node) {
-
-  if (!empty($node->seo_meta['open_graph']['meta_og_image_fid'])) {
-    $file = file_load($node->seo_meta['open_graph']['meta_og_image_fid']);
-    $file->status = FILE_STATUS_PERMANENT;
-    file_save($file);
-    file_usage_add($file, 'seo_meta', 'node', $node->nid); 
   }
 }
 
