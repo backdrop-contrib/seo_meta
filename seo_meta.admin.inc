@@ -667,24 +667,6 @@ function seo_meta_custom_item_tags_edit($form, &$form_state) {
 function seo_meta_custom_item_tags_edit_validate($form, &$form_state) {
   $seo_meta_values = $form_state['values'];
 
-  $empty_tags = (
-      empty($seo_meta_values['page_title']) &&
-      empty($seo_meta_values['meta_keywords']) &&
-      empty($seo_meta_values['meta_description']) &&
-      empty($seo_meta_values['rel_canonical'])) ? TRUE : FALSE;
-
-  $checked_boxes = FALSE;
-
-  foreach ($seo_meta_values['meta_robots'] as $tag => $value) {
-    if (is_string($value)) {
-      $checked_boxes = TRUE;
-    }
-  }
-
-  if ($empty_tags && !$checked_boxes) {
-    form_set_error('', t('Please fill in some values to the fields, nothing to save!'));
-  }
-  
   if (backdrop_strlen($seo_meta_values['meta_description']) > 254) {
     form_set_error('meta_description',
       t('Text you trying fill in to field "Meta description" is too long!'));

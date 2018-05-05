@@ -45,11 +45,11 @@ The main configuration page (Administration > Configuration >
 Metadata > SEO Meta tags or admin/config/metadata/seo_meta) 
 control defaults and may be used for:
 
-- set default value for any meta tag;
-- define usage of site name in page titles and type of visual divider in this case;
-- define "Base Canonical URL" (see description on the form); 
-- set visibility for "keywords" meta tag;
-- change shortcut icon link "rel" and "type" attributes (see description on the form).
+- set up default values for meta tags;
+- enable or disable usage of site name in page titles and set divider in between;
+- define replacement for "Canonical Base URL" (see description on the form); 
+- enable availability for obsolete "Keywords" meta tag;
+- change shortcut icon link "rel" and "type" attributes (see description on the form);
 
 Meta tags for "Front page" (Home page) may be set by using tab 
 in admin area: (Administration > Configuration > Metadata > 

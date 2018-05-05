@@ -465,17 +465,20 @@ function seo_meta_node_predelete(Node $node) {
  * Implements hook_html_head_alter().
  */
 function seo_meta_html_head_alter(&$head_elements) {
-  
+  $head_elements = array_reverse($head_elements);
   $config = config('seo_meta.settings');
   $fix_favicon = $config->get('fix_favicon');
+  $tmp_arr = array();
   
   foreach ($head_elements as $key => $element) {
-
     if (isset($element['#attributes']['rel']) && $element['#attributes']['rel'] == 'canonical') {
-      $system_canonical = $element['#attributes']['href'];
-      // Check if we need a customized canonical URL.
-      $head_elements[$key]['#attributes']['href'] = seo_meta_canonical_url($system_canonical);
+      // deduplicate system canonical
+      $tmp_arr[] = $head_elements[$key];
+      if (count($tmp_arr)> 1) {
+        unset($head_elements[$key]);
+      }
     }
+    
     if ($fix_favicon) {
       if (isset($element['#attributes']['rel']) && $element['#attributes']['rel'] == 'shortcut icon') {
         $head_elements[$key]['#attributes']['type'] = 'image/x-icon';
@@ -661,6 +664,7 @@ function seo_meta_record_delete($ce_type = '', $ce_id = '') {
  */
 function seo_meta_build_page_tags() {
   
+  $secure = config_get('system.core', 'canonical_secure') == 1 ? TRUE : FALSE; 
   $caller = seo_meta_caller();
   $weight = TAG_WEIGHT;
   
@@ -704,6 +708,11 @@ function seo_meta_build_page_tags() {
         if ($tag == 'meta_og_image_fid') {
           $image = file_load($value);
           $value = is_object($image) ? file_create_url($image->uri) : '';
+          
+          if (!empty($value) && $secure) {
+            $value = str_replace('http://', 'https://', $value);
+          }
+          
           $attribute = 'property';
           $tag = str_replace('_fid', '', $tag);
         }
@@ -745,6 +754,8 @@ function seo_meta_preprocess_page(&$variables) {
   if (path_is_admin($_GET['q'])) {
     return FALSE;
   }
+  
+  global $base_url;
 
   $is_node_page = arg(0) == 'node' && is_numeric(arg(1));
    
@@ -754,10 +765,10 @@ function seo_meta_preprocess_page(&$variables) {
     return FALSE;
   }
 
-  $config     = config('seo_meta.settings');
-  $use_og_url = $config->get('use_og_url');
-  $caller     = seo_meta_caller();
-
+  $config         = config('seo_meta.settings');
+  $use_og_url     = $config->get('use_og_url');
+  $caller         = seo_meta_caller();
+  $caller_type    = is_object($caller) ? $caller->type : NULL;
   $seo_meta_title = is_object($caller) ? seo_meta_get_tag_value('page_title', $caller->type, $caller->id) : '';
   $head_site_name = $variables['head_title_array']['name'];
   
@@ -780,26 +791,29 @@ function seo_meta_preprocess_page(&$variables) {
   }
 
   // Add canonical URL to views and homepages overriding
-  if (is_object($caller)) {
-    
-    if ($caller->type == TYPE_VIEW || $caller->type == TYPE_HOMEPAGE) {
-      
-      $canonical_url = seo_meta_canonical_url();
-      if (!empty($canonical_url)) {
-        backdrop_add_html_head_link(array('rel' => 'canonical', 'href' => $canonical_url));
-      }
-    }
+  if ($caller_type == TYPE_VIEW) {
+    $view_url = url(current_path(), array('absolute' => TRUE));
+    $canonical_url =  seo_meta_canonical_url($view_url);
+  }
+
+  if ($caller_type == TYPE_HOMEPAGE) {
+    $canonical_url = seo_meta_canonical_url($base_url);
+  }
+
+  if (!empty($canonical_url)) {
+    backdrop_add_html_head_link(array('rel' => 'canonical', 'href' => $canonical_url));
   }
   
-  // add og:url if selected
+  // add og:url if selected in default settings
   if ($use_og_url) {
     $current_path = current_path();
-    
-    if ($current_path !== 'node') {
-      $current_url = url($current_path, array('absolute' => TRUE));
+    $secure = config_get('system.core', 'canonical_secure') == 1 ? TRUE : FALSE;
+
+    if ($caller_type == TYPE_HOMEPAGE) {
+      $current_url = url('/', array('absolute' => TRUE, 'https' => $secure));      
     }
     else {
-      $current_url = url('/', array('absolute' => TRUE));      
+      $current_url = url($current_path, array('absolute' => TRUE, 'https' => $secure));
     }
 
     backdrop_add_html_head(
@@ -824,24 +838,20 @@ function seo_meta_preprocess_page(&$variables) {
  * @return string $canonical_url
  */
 function seo_meta_canonical_url($system_canonical = '') {
-
   global $base_url;
-  
   $canonical_secure   = config_get('system.core', 'canonical_secure');
   $proto              = $canonical_secure ? 'https://' : 'http://';
   $path               = parse_url($system_canonical, PHP_URL_PATH);
+  $host               = parse_url($base_url, PHP_URL_HOST);
   $base_canonical_url = rtrim(config_get('seo_meta.settings', 'base_canonical_url'), '/');
   $caller             = seo_meta_caller();
-
-  if ($base_canonical_url != '') {
-    
-    $canonical_url = $proto . $base_canonical_url . $path;
+  
+  // If base canonical URL is not defined by default 
+  if ($base_canonical_url == '') {
+    $base_canonical_url = $host;
   }
-  else {
-
-    $base_canonical_url = $base_url;
-    $canonical_url = $system_canonical;
-  }
+  
+  $canonical_url = $proto . $base_canonical_url . $path;
 
   // Check if canonical URL redefined in content entry
   if (is_object($caller)) {
