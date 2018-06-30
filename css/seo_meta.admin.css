@@ -1,6 +1,6 @@
-.form-checkboxes {
+.seo-meta.form-checkboxes {
   display: flex;
 }
-.form-checkboxes > div.form-item {
+.seo-meta.form-checkboxes > div.form-item {
   margin-right: 2em;
 }

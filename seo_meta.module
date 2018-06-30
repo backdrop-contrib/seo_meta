@@ -69,6 +69,14 @@ function seo_meta_menu() {
     'access arguments' => array('administer seo meta settings'),
     'weight' => 2,
   );
+  
+  $items['admin/config/' . $sub_path . '/seo_meta/home/%'] = array(
+    'title' => 'Front page meta tags edit form',
+    'type' => MENU_LOCAL_TASK,
+    'page arguments' => array('seo_meta_custom_item_tags_edit'),
+    'file' => 'seo_meta.admin.inc',
+    'access arguments' => array('administer seo meta settings'),
+  );
 
   $items['admin/config/' . $sub_path . '/seo_meta/views'] = array(
     'title' => 'Views pages',
@@ -80,39 +88,34 @@ function seo_meta_menu() {
     'weight' => 3,
   );
   
-  $items['admin/config/' . $sub_path . '/seo_meta/taxonomy'] = array(
-    'title' => 'Taxonomy pages',
-    'type' => MENU_LOCAL_TASK,
-    'page arguments' => array('seo_meta_settings_taxonomy_form'),
-    'file' => 'seo_meta.admin.inc',
-    'access callback' => 'user_access',
-    'access arguments' => array('administer seo meta settings'),
-    'weight' => 4,
-  );
-  
-  $items['admin/config/' . $sub_path . '/seo_meta/home/%'] = array(
-    'title' => 'Front page meta tags edit form',
-    'type' => MENU_SUGGESTED_ITEM,
-    'page arguments' => array('seo_meta_custom_item_tags_edit'),
-    'file' => 'seo_meta.admin.inc',
-    'access arguments' => array('administer seo meta settings'),
-  );
-  
-  $items['admin/config/' . $sub_path . '/seo_meta/taxonomy/%'] = array(
-    'title' => 'Taxonomy page meta tags edit form',
-    'type' => MENU_SUGGESTED_ITEM,
-    'page arguments' => array('seo_meta_custom_item_tags_edit'),
-    'file' => 'seo_meta.admin.inc',
-    'access arguments' => array('administer seo meta settings'),
-  );
-  
   $items['admin/config/' . $sub_path . '/seo_meta/views/%'] = array(
     'title' => 'Views page meta tags edit form',
-    'type' => MENU_SUGGESTED_ITEM,
+    'type' => MENU_LOCAL_TASK,
     'page arguments' => array('seo_meta_custom_item_tags_edit'),
     'file' => 'seo_meta.admin.inc',
     'access arguments' => array('administer seo meta settings'),
   );
+  
+  if (module_exists('taxonomy')) {
+    $items['admin/config/' . $sub_path . '/seo_meta/taxonomy'] = array(
+      'title' => 'Taxonomy pages',
+      'type' => MENU_LOCAL_TASK,
+      'page arguments' => array('seo_meta_settings_taxonomy_form'),
+      'file' => 'seo_meta.admin.inc',
+      'access callback' => 'user_access',
+      'access arguments' => array('administer seo meta settings'),
+      'weight' => 4,
+    );
+    
+    $items['admin/config/' . $sub_path . '/seo_meta/taxonomy/%'] = array(
+      'title' => 'Taxonomy page meta tags edit form',
+      'type' => MENU_LOCAL_TASK,
+      'page arguments' => array('seo_meta_custom_item_tags_edit'),
+      'file' => 'seo_meta.admin.inc',
+      'access arguments' => array('administer seo meta settings'),
+    );
+    
+  }
   
   return $items;
 }
@@ -221,6 +224,7 @@ function seo_meta_form_alter(&$form, $form_state, $form_id) {
         '#options' => backdrop_map_assoc(array('NOINDEX', 'NOFOLLOW', 'NOARCHIVE', 'NOODP', 'NOYDIR', 'NOSNIPPET')),
         '#default_value' => isset($saved_tags['meta_robots']) ? unserialize($saved_tags['meta_robots']) : array(),
         '#description' => 'Search engines assume "INDEX" and "FOLLOW" unless these are specifically disabled above.',
+        '#attributes' => array('class' => array('seo-meta')),
       );
       $form['seo_meta']['holder']['more']['rel_canonical'] = array(
         '#type' => 'textfield',
