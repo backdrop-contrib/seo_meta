@@ -406,9 +406,9 @@ function seo_meta_get_node_data(Node $node) {
 }
 
 /**
- * Implements hook_node_insert().
+ * Implements hook_node_presave().
  */
-function seo_meta_node_insert(Node $node) {
+function seo_meta_node_presave(Node $node) {
 
   if (isset($node->seo_meta['enabled']) && $node->seo_meta['enabled'] == 1) {
     // save OG image as permanent file 
