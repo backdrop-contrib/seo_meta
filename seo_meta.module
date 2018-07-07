@@ -411,18 +411,24 @@ function seo_meta_get_node_data(Node $node) {
 function seo_meta_node_presave(Node $node) {
 
   if (isset($node->seo_meta['enabled']) && $node->seo_meta['enabled'] == 1) {
-    // save OG image as permanent file 
+    // save OG image as permanent file
     if (!empty($node->seo_meta['open_graph']['meta_og_image_fid'])) {
       $file = file_load($node->seo_meta['open_graph']['meta_og_image_fid']);
       $file->status = FILE_STATUS_PERMANENT;
       file_save($file);
-      file_usage_add($file, 'seo_meta', 'node', $node->nid); 
+      file_usage_add($file, 'file', 'file', $file->fid); 
     }
-    
-    $data = seo_meta_get_node_data($node);
-    
-    seo_meta_record_insert($data);
   }
+}
+
+/**
+ * Implements hook_node_insert().
+ */
+function seo_meta_node_insert(Node $node) {
+  if (isset($node->seo_meta['enabled']) && $node->seo_meta['enabled'] == 1) {
+    $data = seo_meta_get_node_data($node);
+    seo_meta_record_insert($data);
+  }  
 }
 
 /**
