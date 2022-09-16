@@ -88,7 +88,7 @@ function seo_meta_settings_form() {
     '#title' => t('Default meta robots'),
     '#options' => backdrop_map_assoc(array('NOINDEX', 'NOFOLLOW', 'NOARCHIVE', 'NOODP', 'NOYDIR', 'NOSNIPPET')),
     '#default_value' => isset($saved_tags['meta_robots']) ? unserialize($saved_tags['meta_robots']) : array(),
-    '#description' => 'Search engines assume "INDEX" and "FOLLOW" unless these are specifically disabled above.',
+    '#description' => t('Search engines assume "INDEX" and "FOLLOW" unless these are specifically disabled above.'),
     '#attributes' => array('class' => array('seo-meta')),
   );
   $form['basic']['fix_favicon'] = array(
@@ -550,7 +550,7 @@ function seo_meta_custom_item_tags_edit($form, &$form_state) {
     '#title' => t('Meta robots'),
     '#options' => backdrop_map_assoc(array('NOINDEX', 'NOFOLLOW', 'NOARCHIVE', 'NOODP', 'NOYDIR', 'NOSNIPPET')),
     '#default_value' => isset($saved_tags['meta_robots']) ? unserialize($saved_tags['meta_robots']) : array(),
-    '#description' => 'Search engines assume "INDEX" and "FOLLOW" unless these are specifically disabled above.',
+    '#description' => t('Search engines assume "INDEX" and "FOLLOW" unless these are specifically disabled above.'),
     '#attributes' => array('class' => array('seo-meta')),
   );
   $form['seo_meta']['rel_canonical'] = array(

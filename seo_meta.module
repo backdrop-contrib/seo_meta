@@ -223,7 +223,7 @@ function seo_meta_form_alter(&$form, $form_state, $form_id) {
         '#title' => t('Meta robots'),
         '#options' => backdrop_map_assoc(array('NOINDEX', 'NOFOLLOW', 'NOARCHIVE', 'NOODP', 'NOYDIR', 'NOSNIPPET')),
         '#default_value' => isset($saved_tags['meta_robots']) ? unserialize($saved_tags['meta_robots']) : array(),
-        '#description' => 'Search engines assume "INDEX" and "FOLLOW" unless these are specifically disabled above.',
+        '#description' => t('Search engines assume "INDEX" and "FOLLOW" unless these are specifically disabled above.'),
         '#attributes' => array('class' => array('seo-meta')),
       );
       $form['seo_meta']['holder']['more']['rel_canonical'] = array(
