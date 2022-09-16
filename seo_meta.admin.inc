@@ -32,10 +32,10 @@ function seo_meta_settings_form() {
   $form['description'] = array(
     '#prefix' => '<div>',
     '#markup' => 'This module provides an interface for adding meta tags to pages.'
-    . '<br />Values of meta tags defined below will be added as default to the pages where meta tags not defined.'
+    . '<br />Values of meta tags defined below will be added as default to the pages where meta tags are not defined.'
     . '<br />Defaults can be overrided:'
     . '<br />&nbsp;- for node pages - using vertical tab "SEO meta tags" on the node edit form;</em>'
-    . '<br />&nbsp;- for views, taxonomy or home pages - using corresponding tabs of this form.',
+    . '<br />&nbsp;- for views, taxonomy or home pages - by using corresponding tabs of this form.',
     '#suffix' => '</div>',
   );
   
@@ -81,7 +81,7 @@ function seo_meta_settings_form() {
     '#default_value' => isset($saved_tags['meta_description']) ? $saved_tags['meta_description'] : '',
     '#rows' => 3,
     '#cols' => 30,
-    '#description' => t('One or two sentence described this site (160-200 characters max. without any HTML markup).'),
+    '#description' => t('One or two sentence described this site (160-240 characters max. without any HTML markup).'),
   );
   $form['basic']['meta_robots'] = array(
     '#type' => 'checkboxes',
@@ -140,7 +140,7 @@ function seo_meta_settings_form() {
     '#title' => t('Open Graph description'),
     '#default_value' => isset($saved_tags['meta_og_description']) ? $saved_tags['meta_og_description'] : '',
     '#rows' => 3,
-    '#description' => t('A brief description of the content, usually between 2 and 4 sentences (without HTML markup). This will displayed below the title of the post on Facebook.'),
+    '#description' => t('A brief description of the content, usually between 2 and 4 sentences (160-240 characters max. without any HTML markup). This will displayed below the title of the post on Facebook.'),
   );
   $form['open_graph']['meta_og_type'] = array(
     '#title' => t('Open Graph type'),
@@ -220,6 +220,24 @@ function seo_meta_settings_form() {
   );
 
   return $form;
+}
+
+/**
+ * Implements hook form_validate().
+ * 
+ */
+function seo_meta_settings_form_validate($form, &$form_state) {
+  $seo_meta_values = $form_state['values'];
+
+  if (backdrop_strlen($seo_meta_values['meta_description']) > 254) {
+    form_set_error('meta_description',
+      t('Text you trying fill in to field "Meta description" is too long!'));
+  }
+  
+  if (backdrop_strlen($seo_meta_values['meta_og_description']) > 254) {
+    form_set_error('meta_og_description',
+      t('Text you trying fill in to field "Open Graph description" is too long!'));
+  }
 }
 
 /**
@@ -542,7 +560,7 @@ function seo_meta_custom_item_tags_edit($form, &$form_state) {
     '#title' => t('Meta description'),
     '#default_value' => isset($saved_tags['meta_description']) ? $saved_tags['meta_description'] : '',
     '#rows' => 3,
-    '#description' => t('One or two sentence described this page (160-200 characters max. without any HTML markup.)'),
+    '#description' => t('One or two sentence described this page (160-240 characters max. without any HTML markup.)'),
   );
 
   $form['seo_meta']['meta_robots'] = array(
@@ -578,7 +596,7 @@ function seo_meta_custom_item_tags_edit($form, &$form_state) {
     '#title' => t('Open Graph description'),
     '#default_value' => isset($saved_tags['meta_og_description']) ? $saved_tags['meta_og_description'] : '',
     '#rows' => 3,
-    '#description' => t('A brief description of the content, usually between 2 and 4 sentences (without HTML markup). This will displayed below the title of the post on Facebook.'),
+    '#description' => t('A brief description of the content, usually between 2 and 4 sentences (160-240 characters max. without any HTML markup). This will displayed below the title of the post on Facebook.'),
   );
   $form['seo_meta']['open_graph']['meta_og_type'] = array(
     '#title' => t('Open Graph type'),

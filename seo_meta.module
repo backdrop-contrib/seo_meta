@@ -209,7 +209,7 @@ function seo_meta_form_alter(&$form, $form_state, $form_id) {
         '#title' => t('Meta description'),
         '#default_value' => isset($saved_tags['meta_description']) ? $saved_tags['meta_description'] : '',
         '#rows' => 3,
-        '#description' => t('One or two sentence described this page (160-200 characters max. without any HTML markup.)'),
+        '#description' => t('One or two sentence described this page (160-240 characters max. without any HTML markup.)'),
       );
 
       $form['seo_meta']['holder']['more'] = array(
@@ -251,7 +251,7 @@ function seo_meta_form_alter(&$form, $form_state, $form_id) {
         '#title' => t('Open Graph description'),
         '#default_value' => isset($saved_tags['meta_og_description']) ? $saved_tags['meta_og_description'] : '',
         '#rows' => 3,
-        '#description' => t('A brief description of the content, usually between 2 and 4 sentences (without HTML markup). This will displayed below the title of the post on Facebook.'),
+        '#description' => t('A brief description of the content, usually between 2 and 4 sentences (160-240 characters max. without any HTML markup). This will displayed below the title of the post on Facebook.'),
       );
       $form['seo_meta']['holder']['open_graph']['meta_og_type'] = array(
         '#title' => t('Open Graph type'),
