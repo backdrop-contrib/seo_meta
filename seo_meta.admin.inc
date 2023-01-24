@@ -165,6 +165,7 @@ function seo_meta_settings_form() {
       'file_validate_extensions' => array('gif png jpg jpeg'),
       'file_validate_size' => array(file_upload_max_size()),
     ),
+    '#browser_view' => 'image_library',
   );
   $form['open_graph']['meta_og_site_name'] = array(
     '#type' => 'textfield',
@@ -302,14 +303,8 @@ function seo_meta_settings_form_submit($form, &$form_state) {
   else {
     seo_meta_record_update(TYPE_DEFAULTS, $langcode, $data);
   }
-  
-  if (!empty($form_state['values']['meta_og_image_fid'])) {
-    $file = file_load($form_state['values']['meta_og_image_fid']);
-    $file->status = FILE_STATUS_PERMANENT;
-    file_save($file);
-    file_usage_add($file, 'seo_meta', 'user', $user->uid); 
-  }
-  
+  seo_meta_form_submit_update_file_usage($form, $form_state);
+
   backdrop_set_message(t('The configuration options have been saved.'));
 } 
 

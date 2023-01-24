@@ -137,6 +137,7 @@ function seo_meta_form_alter(&$form, $form_state, $form_id) {
     $use_keywords = $config->get('use_keywords');
 
     $form['#validate'][] = 'seo_meta_form_validate';
+    $form['#submit'][] = 'seo_meta_form_submit_update_file_usage';
     // edit existing node or add new 
     $nid = isset($form['nid']['#value']) ? $form['nid']['#value'] : NULL;
     
@@ -275,6 +276,7 @@ function seo_meta_form_alter(&$form, $form_state, $form_id) {
           'file_validate_extensions' => array('gif png jpg jpeg'),
           'file_validate_size' => array(file_upload_max_size()),
         ),
+        '#browser_view' => 'image_library',
       );
       $form['seo_meta']['holder']['open_graph']['meta_og_site_name'] = array(
         '#type' => 'textfield',
@@ -368,6 +370,45 @@ function seo_meta_form_validate($form, &$form_state) {
     }
   }
 }
+
+/**
+ * Submission callback to record file usage.
+ *
+ * Does not work with the multi-step forms (front page, views, terms).
+ */
+function seo_meta_form_submit_update_file_usage($form, &$form_state) {
+  // The node form.
+  if (isset($form['seo_meta']['holder'])) {
+    $default = $form['seo_meta']['holder']['open_graph']['meta_og_image_fid']['#default_value'];
+    $fid = $form_state['values']['seo_meta']['open_graph']['meta_og_image_fid'];
+  }
+  // The default settings form.
+  else {
+    $default = $form['open_graph']['meta_og_image_fid']['#default_value'];
+    $fid = $form_state['values']['meta_og_image_fid'];
+  }
+  $entity = !empty($form['#entity']) ? $form['#entity'] : NULL;
+
+  if ($fid) {
+    if ($fid != $default && $file = file_load($fid)) {
+      if ($entity) {
+        file_usage_add($file, 'seo_meta', $entity->entityType(), $entity->id());
+      }
+      else {
+        file_usage_add($file, 'seo_meta', 'file', $file->fid);
+      }
+    }
+  }
+  elseif ($default && $file = file_load($default)) {
+    if ($entity) {
+      file_usage_delete($file, 'seo_meta', $entity->entityType(), $entity->id());
+    }
+    else {
+      file_usage_delete($file, 'seo_meta', 'file', $file->fid);
+    }
+  }
+}
+
 /**
  * Helper for collect data from node
  * 
@@ -403,22 +444,6 @@ function seo_meta_get_node_data(Node $node) {
   );
   
   return $data;
-}
-
-/**
- * Implements hook_node_presave().
- */
-function seo_meta_node_presave(Node $node) {
-
-  if (isset($node->seo_meta['enabled']) && $node->seo_meta['enabled'] == 1) {
-    // save OG image as permanent file
-    if (!empty($node->seo_meta['open_graph']['meta_og_image_fid'])) {
-      $file = file_load($node->seo_meta['open_graph']['meta_og_image_fid']);
-      $file->status = FILE_STATUS_PERMANENT;
-      file_save($file);
-      file_usage_add($file, 'file', 'file', $file->fid); 
-    }
-  }
 }
 
 /**
