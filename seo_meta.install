@@ -10,7 +10,7 @@
 function seo_meta_requirements($phase) {
   // Ensure translations don't break during installation.
   $t = get_t();
-  
+
   $requirements = array();
 
   if ($phase == 'install') {
@@ -19,7 +19,7 @@ function seo_meta_requirements($phase) {
       $requirements['base_meta']['severity'] = REQUIREMENT_ERROR;
     }
   }
-  
+
   return $requirements;
 }
 
@@ -173,5 +173,14 @@ function seo_meta_schema() {
 function seo_meta_update_1000() {
   $config = config('seo_meta.settings');
   $config->set('use_og_url', 0);
-  $config->save();  
+  $config->save();
+}
+
+/**
+ *  Add and initialize new variable
+ */
+function seo_meta_update_1001() {
+  $config = config('seo_meta.settings');
+  $config->set('excluded_types', []);
+  $config->save();
 }
