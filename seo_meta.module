@@ -275,7 +275,7 @@ function seo_meta_form_alter(&$form, $form_state, $form_id) {
         '#title' => t('Upload image that appears when someone shares the content to Facebook.'),
         '#type' => 'managed_file',
         '#upload_location' => 'public://' . $config->get('meta_og_images_dir'),
-        '#default_value' => isset($saved_tags['meta_og_image_fid']) ? $saved_tags['meta_og_image_fid'] : '',
+        '#default_value' => isset($saved_tags['meta_og_image_fid']) ? $saved_tags['meta_og_image_fid'] : 0,
         '#upload_validators' => array(
           'file_validate_extensions' => array('gif png jpg jpeg'),
           'file_validate_size' => array(file_upload_max_size()),
@@ -394,7 +394,7 @@ function seo_meta_get_node_data(Node $node) {
     'meta_og_title'       => trim($node->seo_meta['open_graph']['meta_og_title']),
     'meta_og_description' => trim($node->seo_meta['open_graph']['meta_og_description']),
     'meta_og_type'        => $node->seo_meta['open_graph']['meta_og_type'],
-    'meta_og_image_fid'   => $node->seo_meta['open_graph']['meta_og_image_fid'],
+    'meta_og_image_fid'   => (int) $node->seo_meta['open_graph']['meta_og_image_fid'],
     'meta_og_site_name'   => trim($node->seo_meta['open_graph']['meta_og_site_name']),
     'meta_tw_card'        => $node->seo_meta['twitter']['meta_tw_card'],
     'meta_tw_site'        => trim($node->seo_meta['twitter']['meta_tw_site']),
@@ -597,7 +597,7 @@ function seo_meta_get_saved_defaults($langcode) {
         )
       )
       ->condition('ce_type', TYPE_DEFAULTS, '=')
-      ->condition('ce_id', $langcode, '=')                // CHECK !!!!
+      ->condition('ce_id', $langcode, '=')
       ->execute()
       ->fetchAssoc();
   return $result;
@@ -756,7 +756,7 @@ function seo_meta_preprocess_page(&$variables) {
   $is_node_page = arg(0) == 'node' && is_numeric(arg(1));
 
   $status = backdrop_get_http_header('status');
-  // awoid non-custom http status errors pages
+  // avoid non-custom http status errors pages
   if (in_array($status, array('404 Not Found', '403 Forbidden')) && !$is_node_page) {
     return FALSE;
   }
