@@ -5,10 +5,10 @@
 
 define('TYPE_DEFAULTS', 0);
 define('TYPE_HOMEPAGE', 1);
-define('TYPE_NODE',     2);
-define('TYPE_VIEW',     3);
+define('TYPE_NODE', 2);
+define('TYPE_VIEW', 3);
 define('TYPE_TAXONOMY', 4);
-define('TAG_WEIGHT',  100);
+define('TAG_WEIGHT', 100);
 
 /**
  * Implements hook_config_info().
@@ -36,7 +36,6 @@ function seo_meta_permission() {
 
 /**
  * Implements hook_menu().
- *
  */
 function seo_meta_menu() {
   $sub_path = seo_meta_menu_sub_path();
@@ -123,253 +122,165 @@ function seo_meta_menu() {
  * Adds fieldset to the node create/edit form as vertical tab.
  *
  */
-function seo_meta_form_alter(&$form, $form_state, $form_id) {
-  $sub_path = seo_meta_menu_sub_path();
-
-  if (isset($form['#node']) && $form['#node']->type . '_node_form' == $form_id) {
-    $config = config('seo_meta.settings');
-    $excluded_types = $config->get('excluded_types');
-
-    foreach (array_keys($excluded_types, 0, true) as $key) {
-      unset($excluded_types[$key]);
-    }
-
-    if (array_key_exists($form['#node']->type, $excluded_types)) {
-      return;
-    }
-
-    $site_frontpage = config_get('system.core', 'site_frontpage');
-    $use_keywords = $config->get('use_keywords');
-
-    $form['#validate'][] = 'seo_meta_form_validate';
-    // edit existing node or add new
-    $nid = isset($form['nid']['#value']) ? $form['nid']['#value'] : NULL;
-
-    $saved_tags  = isset($nid) ? seo_meta_get_saved_tags(TYPE_NODE, $nid) : NULL;
-
-    $form['seo_meta'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('SEO meta tags'),
-      '#access' => user_access('administer seo meta settings'),
-      '#collapsible' => TRUE,
-      '#collapsed' => FALSE,
-      '#tree' => TRUE,
-      '#weight' => 99,
-      '#group' => 'additional_settings',
-      '#attached' => array(
-        'js' => array(
-          'vertical-tabs' => backdrop_get_path('module', 'seo_meta') . '/js/seo_meta.admin.js',
-        ),
-      ),
-    );
-
-    $form['seo_meta']['#attached']['css'] = array(
-      backdrop_get_path('module', 'seo_meta') . '/css/seo_meta.admin.css',
-    );
-
-    // Inform user if currently editing node is set as site front page
-    if (strpos($site_frontpage, 'node/') === 0 && $form['#node']->nid == substr($site_frontpage, 5)) {
-      $form['seo_meta']['note'] = array(
-        '#prefix' => '<div class="messages warning">',
-        '#suffix' => '</div>',
-        '#markup' => t('This node is set as site <a href="@front">front page</a>, '
-            . 'so for this page <a href="@link">front page meta tags</a> will be used.',
-            array('@link' => url('admin/config/' . $sub_path . '/seo_meta/home'),'@front' => url('admin/config/system/site-information'))),
-      );
-    }
-    else {
-      $form['seo_meta']['enabled'] = array(
-        '#type' => 'checkbox',
-        '#title' => t('Define tags for page of this node'),
-        '#default_value' => !empty($saved_tags),
-        '#description' => t('Optional. If not enabled, <a href="@url">default values</a> will be used', array('@url' => url('admin/config/' . $sub_path . '/seo_meta'))),
-      );
-      $form['seo_meta']['holder'] = array(
-        '#type' => 'container',
-        '#parents' => array('seo_meta'),
-        '#states' => array(
-          'invisible' => array(
-            'input[name="seo_meta[enabled]"]' => array('checked' => FALSE),
-          ),
-        ),
-      );
-      $form['seo_meta']['holder']['page_title'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Page title'),
-        '#default_value' => isset($saved_tags['page_title']) ? $saved_tags['page_title'] : '',
-        '#description' => t('Description of this page to appear in the &lt;title&gt; tag for search engines search result listings.'),
-      );
-      if ($use_keywords) {
-        $form['seo_meta']['holder']['meta_keywords'] = array(
-          '#type' => 'textfield',
-          '#title' => t('Meta keywords'),
-          '#default_value' => isset($saved_tags['meta_keywords']) ? $saved_tags['meta_keywords'] : '',
-          '#size' => 120,
-          '#maxlength' => 255,
-          '#description' => t('Comma separated list of keywords (no more than 10 keyword phrases).'),
-        );
-      }
-      $form['seo_meta']['holder']['meta_description'] = array(
-        '#type' => 'textarea',
-        '#title' => t('Meta description'),
-        '#default_value' => isset($saved_tags['meta_description']) ? $saved_tags['meta_description'] : '',
-        '#rows' => 3,
-        '#description' => t('One or two sentence described this page (160-240 characters max. without any HTML markup.)'),
-      );
-
-      $form['seo_meta']['holder']['more'] = array(
-        '#type' => 'fieldset',
-        '#title' => t('More'),
-        '#collapsible' => TRUE,
-        '#collapsed' => TRUE,
-      );
-      $form['seo_meta']['holder']['more']['meta_robots'] = array(
-        '#type' => 'checkboxes',
-        '#title' => t('Meta robots'),
-        '#options' => backdrop_map_assoc(array('NOINDEX', 'NOFOLLOW', 'NOARCHIVE', 'NOODP', 'NOYDIR', 'NOSNIPPET')),
-        '#default_value' => isset($saved_tags['meta_robots']) ? unserialize($saved_tags['meta_robots']) : array(),
-        '#description' => t('Search engines assume "INDEX" and "FOLLOW" unless these are specifically disabled above.'),
-        '#attributes' => array('class' => array('seo-meta')),
-      );
-      $form['seo_meta']['holder']['more']['rel_canonical'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Canonical URL'),
-        '#default_value' => isset($saved_tags['rel_canonical']) ? $saved_tags['rel_canonical'] : '',
-        '#description' => t("Use a relative URL without the initial slash for current default domain or full URL."
-          . " By default (if no value) this will automatically use URL of this page."),
-      );
-
-      $form['seo_meta']['holder']['open_graph'] = array(
-        '#type' => 'fieldset',
-        '#title' => t('Open Graph'),
-        '#collapsible' => TRUE,
-        '#collapsed' => TRUE,
-      );
-      $form['seo_meta']['holder']['open_graph']['meta_og_title'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Open Graph title'),
-        '#default_value' => isset($saved_tags['meta_og_title']) ? $saved_tags['meta_og_title'] : '',
-        '#description' => t('The title of this page/article as rendered on Facebook (without any branding such as your site name.)'),
-      );
-      $form['seo_meta']['holder']['open_graph']['meta_og_description'] = array(
-        '#type' => 'textarea',
-        '#title' => t('Open Graph description'),
-        '#default_value' => isset($saved_tags['meta_og_description']) ? $saved_tags['meta_og_description'] : '',
-        '#rows' => 3,
-        '#description' => t('A brief description of the content, usually between 2 and 4 sentences (160-240 characters max. without any HTML markup). This will displayed below the title of the post on Facebook.'),
-      );
-      $form['seo_meta']['holder']['open_graph']['meta_og_type'] = array(
-        '#title' => t('Open Graph type'),
-        '#type' => 'select',
-        '#options' => array(
-          '' => t('Select type'),
-          'website' => 'website',
-          'article' => 'article',
-          'product' => 'product',
-          'profile' => 'profile',
-        ),
-        '#default_value' => isset($saved_tags['meta_og_type']) ? $saved_tags['meta_og_type'] : '',
-        '#description' => t('The type of media of your content.'),
-      );
-      $form['seo_meta']['holder']['open_graph']['meta_og_image_fid'] = array(
-        '#title' => t('Upload image that appears when someone shares the content to Facebook.'),
-        '#type' => 'managed_file',
-        '#upload_location' => 'public://' . $config->get('meta_og_images_dir'),
-        '#default_value' => isset($saved_tags['meta_og_image_fid']) ? $saved_tags['meta_og_image_fid'] : 0,
-        '#upload_validators' => array(
-          'file_validate_extensions' => array('gif png jpg jpeg'),
-          'file_validate_size' => array(file_upload_max_size()),
-        ),
-      );
-      $form['seo_meta']['holder']['open_graph']['meta_og_site_name'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Site name'),
-        '#default_value' => isset($saved_tags['meta_og_site_name']) ? $saved_tags['meta_og_site_name'] : '',
-        '#description' => t('The name of your website (such as IMDb, not imdb.com).'),
-      );
-
-      $form['seo_meta']['holder']['twitter'] = array(
-        '#type' => 'fieldset',
-        '#title' => t('Twitter'),
-        '#collapsible' => TRUE,
-        '#collapsed' => TRUE,
-      );
-      $form['seo_meta']['holder']['twitter']['meta_tw_card'] = array(
-        '#title' => t('Twitter Card type'),
-        '#type' => 'select',
-        '#options' => array(
-          '' => t('Select card type'),
-          'summary' => 'Summary Card',
-          'summary_large_image' => 'Summary Card with Large Image',
-          'photo' => 'Photo Card',
-          'gallery' => 'Gallery Card',
-          'product' => 'Product Card',
-        ),
-        '#default_value' => isset($saved_tags['meta_tw_card']) ? $saved_tags['meta_tw_card'] : '',
-        '#description' => t('The card type.'),
-      );
-      $form['seo_meta']['holder']['twitter']['meta_tw_site'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Site'),
-        '#default_value' => isset($saved_tags['meta_tw_site']) ? $saved_tags['meta_tw_site'] : '',
-        '#description' => t('@username of website.'),
-      );
-      $form['seo_meta']['holder']['twitter']['meta_tw_creator'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Creator'),
-        '#default_value' => isset($saved_tags['meta_tw_creator']) ? $saved_tags['meta_tw_creator'] : '',
-        '#description' => t('@username of content creator.'),
-      );
-      $form['seo_meta']['holder']['twitter']['div'] = array(
-        '#markup' => '<div class="description">' . t('Note: When the Twitter card processor looks for tags on your page,
-           it first checks for the Twitter property, and if not present,
-           falls back to the supported Open Graph property (for example site URL, title, description and image).
-           This allows for both to be defined on the page independently, and minimizes
-           the amount of duplicate markup required to describe your content and experience.') . '</div>',
-      );
-    }
+function seo_meta_form_alter(&$form, &$form_state, $form_id) {
+  if (!isset($form['#node']) || $form['#node']->type . '_node_form' != $form_id) {
+    return;
   }
+
+  $node = $form['#node'];
+  if (seo_meta_content_type_excluded($node->type)) {
+    return;
+  }
+
+  form_load_include($form_state, 'inc', 'seo_meta', 'seo_meta.admin');
+
+  $sub_path       = seo_meta_menu_sub_path();
+  $config         = config('seo_meta.settings');
+  $site_frontpage = config_get('system.core', 'site_frontpage');
+  $use_keywords   = (bool) $config->get('use_keywords');
+  $nid            = isset($form['nid']['#value']) ? $form['nid']['#value'] : NULL;
+  $saved_tags     = isset($nid) ? seo_meta_get_saved_tags(TYPE_NODE, $nid) : array();
+
+  $form['#validate'][] = 'seo_meta_form_validate';
+  $form['seo_meta'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('SEO meta tags'),
+    '#access' => user_access('administer seo meta settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#tree' => TRUE,
+    '#weight' => 99,
+    '#group' => 'additional_settings',
+    '#attached' => array(
+      'js' => array(
+        'vertical-tabs' => backdrop_get_path('module', 'seo_meta') . '/js/seo_meta.admin.js',
+      ),
+      'css' => array(
+        backdrop_get_path('module', 'seo_meta') . '/css/seo_meta.admin.css',
+      ),
+    ),
+  );
+
+  // Inform the user when the node that is currently edited is set as the site front page.
+  if (strpos($site_frontpage, 'node/') === 0 && $node->nid == substr($site_frontpage, 5)) {
+    $form['seo_meta']['note'] = array(
+      '#prefix' => '<div class="messages warning">',
+      '#suffix' => '</div>',
+      '#markup' => t('This node is set as site <a href="@front">front page</a>, so for this page <a href="@link">front page meta tags</a> will be used.', array(
+        '@link' => url('admin/config/' . $sub_path . '/seo_meta/home'),
+        '@front' => url('admin/config/system/site-information'),
+      )),
+    );
+
+    return;
+  }
+
+  $form['seo_meta']['enabled'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Define tags for page of this node'),
+    '#default_value' => !empty($saved_tags),
+    '#description' => t('Optional. Empty fields inherit the corresponding <a href="@url">default values</a>.', array(
+      '@url' => url('admin/config/' . $sub_path . '/seo_meta'),
+    )),
+  );
+  $form['seo_meta']['holder'] = array(
+    '#type' => 'container',
+    '#parents' => array('seo_meta'),
+    '#states' => array(
+      'invisible' => array(
+        'input[name="seo_meta[enabled]"]' => array('checked' => FALSE),
+      ),
+    ),
+  );
+
+  seo_meta_add_basic_elements($form['seo_meta']['holder'], $saved_tags, array(
+    'page_title' => TRUE,
+    'use_keywords' => $use_keywords,
+    'canonical' => TRUE,
+    'wrap_more' => TRUE,
+  ));
+
+  $form['seo_meta']['holder']['open_graph'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Open Graph'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  seo_meta_add_open_graph_elements($form['seo_meta']['holder']['open_graph'], $saved_tags, $config);
+
+  $form['seo_meta']['holder']['twitter'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Twitter / X'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  seo_meta_add_twitter_elements($form['seo_meta']['holder']['twitter'], $saved_tags);
 }
 
 /**
  * Implements hook_validate() for node edit form.
- *
- * @todo per field validation.
  */
-
 function seo_meta_form_validate($form, &$form_state) {
-  if (isset($form['#node']) && is_object($form['#node'])) {
-    if (isset($form_state['values']['seo_meta']['enabled']) && $form_state['values']['seo_meta']['enabled'] == 1) {
-      $seo_meta_values = $form_state['values']['seo_meta'];
+  if (!isset($form['#node']) || !is_object($form['#node'])) {
+    return;
+  }
 
-      $empty_tags = (
-        empty($seo_meta_values['page_title']) &&
-        empty($seo_meta_values['meta_keywords']) &&
-        empty($seo_meta_values['meta_description'])) ? TRUE : FALSE;
+  $values = isset($form_state['values']['seo_meta']) && is_array($form_state['values']['seo_meta'])
+    ? $form_state['values']['seo_meta']
+    : array();
 
-      $checked_boxes = FALSE;
+  if (empty($values['enabled'])) {
+    return;
+  }
 
-      foreach ($seo_meta_values['more']['meta_robots'] as $tag => $value) {
-        if (is_string($value)) {
-          $checked_boxes = TRUE;
-        }
-      }
+  if (!seo_meta_form_has_values($values)) {
+    form_set_error('', t('Please fill in some fields in the form "SEO meta tags" or uncheck checkbox "Define tags for page of this node".'));
+  }
 
-      if ($empty_tags && !$checked_boxes) {
-        form_set_error('',
-          t('Please fill in some fields in the form "SEO meta tags" or uncheck checkbox "Define tags for page of this node".'));
-      }
+  $description = isset($values['meta_description']) ? (string) $values['meta_description'] : '';
+  if (backdrop_strlen($description) > 254) {
+    form_set_error('seo_meta][meta_description', t('Text you are trying to enter in "Meta description" is too long.'));
+  }
 
-      if (backdrop_strlen($seo_meta_values['meta_description']) > 254) {
-        form_set_error('seo_meta][meta_description',
-          t('Text you trying fill in to field "Meta description" (under "SEO meta tags" tab) is too long!'));
-      }
-      if (backdrop_strlen($seo_meta_values['open_graph']['meta_og_description']) > 254) {
-        form_set_error('seo_meta][open_graph][meta_og_description',
-          t('Text you trying fill in to field "Open Graph description" (under "SEO meta tags" tab > "Open Graph") is too long!'));
-      }
+  $og_description = isset($values['open_graph']['meta_og_description'])
+    ? (string) $values['open_graph']['meta_og_description']
+    : '';
+  if (backdrop_strlen($og_description) > 254) {
+    form_set_error('seo_meta][open_graph][meta_og_description', t('Text you are trying to enter in "Open Graph description" is too long.'));
+  }
+}
+
+/**
+ * Checks whether a node form contains at least one explicit override.
+ */
+function seo_meta_form_has_values($values) {
+  $more = isset($values['more']) && is_array($values['more']) ? $values['more'] : array();
+  $open_graph = isset($values['open_graph']) && is_array($values['open_graph']) ? $values['open_graph'] : array();
+  $twitter = isset($values['twitter']) && is_array($values['twitter']) ? $values['twitter'] : array();
+
+  $fields = array(
+    'page_title' => isset($values['page_title']) ? $values['page_title'] : '',
+    'meta_keywords' => isset($values['meta_keywords']) ? $values['meta_keywords'] : '',
+    'meta_description' => isset($values['meta_description']) ? $values['meta_description'] : '',
+    'meta_robots' => isset($more['meta_robots']) ? $more['meta_robots'] : array(),
+    'rel_canonical' => isset($more['rel_canonical']) ? $more['rel_canonical'] : '',
+    'meta_og_title' => isset($open_graph['meta_og_title']) ? $open_graph['meta_og_title'] : '',
+    'meta_og_description' => isset($open_graph['meta_og_description']) ? $open_graph['meta_og_description'] : '',
+    'meta_og_type' => isset($open_graph['meta_og_type']) ? $open_graph['meta_og_type'] : '',
+    'meta_og_image_fid' => isset($open_graph['meta_og_image_fid']) ? $open_graph['meta_og_image_fid'] : 0,
+    'meta_og_site_name' => isset($open_graph['meta_og_site_name']) ? $open_graph['meta_og_site_name'] : '',
+    'meta_tw_card' => isset($twitter['meta_tw_card']) ? $twitter['meta_tw_card'] : '',
+    'meta_tw_site' => isset($twitter['meta_tw_site']) ? $twitter['meta_tw_site'] : '',
+    'meta_tw_creator' => isset($twitter['meta_tw_creator']) ? $twitter['meta_tw_creator'] : '',
+  );
+
+  foreach ($fields as $field => $value) {
+    if (seo_meta_value_is_set($field, $value)) {
+      return TRUE;
     }
   }
+
+  return FALSE;
 }
 
 /**
@@ -379,53 +290,48 @@ function seo_meta_form_validate($form, &$form_state) {
  * @return array $data (key => value when insert/update)
  */
 function seo_meta_get_node_data(Node $node) {
-  $config   = config('seo_meta.settings');
-  $keywords = $config->get('use_keywords') ? trim($node->seo_meta['meta_keywords']) : '';
-  return array(
-    'ce_type'             => TYPE_NODE,
-    'ce_id'               => $node->nid,
-    'path_alias'          => trim($node->path['alias']),
-    'langcode'	          => isset($node->langcode) ? $node->langcode : LANGUAGE_NONE,
-    'page_title'          => trim($node->seo_meta['page_title']),
-    'meta_keywords'       => $keywords,
-    'meta_description'    => trim($node->seo_meta['meta_description']),
-    'meta_robots'         => serialize($node->seo_meta['more']['meta_robots']),
-    'rel_canonical'       => trim($node->seo_meta['more']['rel_canonical']),
-    'meta_og_title'       => trim($node->seo_meta['open_graph']['meta_og_title']),
-    'meta_og_description' => trim($node->seo_meta['open_graph']['meta_og_description']),
-    'meta_og_type'        => $node->seo_meta['open_graph']['meta_og_type'],
-    'meta_og_image_fid'   => (int) $node->seo_meta['open_graph']['meta_og_image_fid'],
-    'meta_og_site_name'   => trim($node->seo_meta['open_graph']['meta_og_site_name']),
-    'meta_tw_card'        => $node->seo_meta['twitter']['meta_tw_card'],
-    'meta_tw_site'        => trim($node->seo_meta['twitter']['meta_tw_site']),
-    'meta_tw_creator'     => trim($node->seo_meta['twitter']['meta_tw_creator']),
-    'uid'                 => $node->uid,
-    'changed'             => time(),
-  );
-}
+  $config     = config('seo_meta.settings');
+  $values     = isset($node->seo_meta) && is_array($node->seo_meta) ? $node->seo_meta : array();
+  $more       = isset($values['more']) && is_array($values['more']) ? $values['more'] : array();
+  $open_graph = isset($values['open_graph']) && is_array($values['open_graph']) ? $values['open_graph'] : array();
+  $twitter    = isset($values['twitter']) && is_array($values['twitter']) ? $values['twitter'] : array();
+  $keywords   = $config->get('use_keywords') && isset($values['meta_keywords'])
+    ? trim((string) $values['meta_keywords'])
+    : '';
 
-/**
- * Implements hook_node_presave().
- */
-function seo_meta_node_presave(Node $node) {
-  if (isset($node->seo_meta['enabled']) && $node->seo_meta['enabled'] == 1) {
-    // save OG image as permanent file
-    if (!empty($node->seo_meta['open_graph']['meta_og_image_fid'])) {
-      $file = file_load($node->seo_meta['open_graph']['meta_og_image_fid']);
-      $file->status = FILE_STATUS_PERMANENT;
-      file_save($file);
-      file_usage_add($file, 'file', 'file', $file->fid);
-    }
-  }
+  return array(
+    'ce_type' => TYPE_NODE,
+    'ce_id' => $node->nid,
+    'path_alias' => isset($node->path['alias']) ? trim((string) $node->path['alias']) : '',
+    'langcode' => isset($node->langcode) ? $node->langcode : LANGUAGE_NONE,
+    'page_title' => isset($values['page_title']) ? trim((string) $values['page_title']) : '',
+    'meta_keywords' => $keywords,
+    'meta_description' => isset($values['meta_description']) ? trim((string) $values['meta_description']) : '',
+    'meta_robots' => seo_meta_robots_encode(isset($more['meta_robots']) ? $more['meta_robots'] : array()),
+    'rel_canonical' => isset($more['rel_canonical']) ? trim((string) $more['rel_canonical']) : '',
+    'meta_og_title' => isset($open_graph['meta_og_title']) ? trim((string) $open_graph['meta_og_title']) : '',
+    'meta_og_description' => isset($open_graph['meta_og_description']) ? trim((string) $open_graph['meta_og_description']) : '',
+    'meta_og_type' => isset($open_graph['meta_og_type']) ? (string) $open_graph['meta_og_type'] : '',
+    'meta_og_image_fid' => isset($open_graph['meta_og_image_fid']) ? (int) $open_graph['meta_og_image_fid'] : 0,
+    'meta_og_site_name' => isset($open_graph['meta_og_site_name']) ? trim((string) $open_graph['meta_og_site_name']) : '',
+    'meta_tw_card' => isset($twitter['meta_tw_card']) ? (string) $twitter['meta_tw_card'] : '',
+    'meta_tw_site' => isset($twitter['meta_tw_site']) ? trim((string) $twitter['meta_tw_site']) : '',
+    'meta_tw_creator' => isset($twitter['meta_tw_creator']) ? trim((string) $twitter['meta_tw_creator']) : '',
+    'uid' => $node->uid,
+    'changed' => time(),
+  );
 }
 
 /**
  * Implements hook_node_insert().
  */
 function seo_meta_node_insert(Node $node) {
-  if (isset($node->seo_meta['enabled']) && $node->seo_meta['enabled'] == 1) {
-    $data = seo_meta_get_node_data($node);
-    seo_meta_record_insert($data);
+  if (!isset($node->seo_meta) || !is_array($node->seo_meta) || !array_key_exists('enabled', $node->seo_meta)) {
+    return;
+  }
+
+  if (!empty($node->seo_meta['enabled'])) {
+    seo_meta_record_insert(seo_meta_get_node_data($node));
   }
 }
 
@@ -433,18 +339,20 @@ function seo_meta_node_insert(Node $node) {
  * Implements hook_node_update().
  */
 function seo_meta_node_update(Node $node) {
-  $result = db_select('seo_meta', 'sm')
-      ->fields('sm')
-      ->condition('ce_type', TYPE_NODE, '=')
-      ->condition('ce_id', $node->nid, '=')
-      ->execute()
-      ->fetchObject();
+  // Do not remove metadata when the form was not available to the editor.
+  if (!isset($node->seo_meta) || !is_array($node->seo_meta) || !array_key_exists('enabled', $node->seo_meta)) {
+    return;
+  }
 
-  $sm_id = is_object($result) ? $sm_id = $result->sm_id : NULL;
+  $sm_id = db_select('seo_meta', 'sm')
+    ->fields('sm', array('sm_id'))
+    ->condition('ce_type', TYPE_NODE)
+    ->condition('ce_id', $node->nid)
+    ->execute()
+    ->fetchField();
 
-  if (isset($node->seo_meta['enabled']) && $node->seo_meta['enabled'] == 1) {
+  if (!empty($node->seo_meta['enabled'])) {
     $data = seo_meta_get_node_data($node);
-
     if ($sm_id) {
       seo_meta_record_update(TYPE_NODE, $node->nid, $data);
     }
@@ -452,10 +360,8 @@ function seo_meta_node_update(Node $node) {
       seo_meta_record_insert($data);
     }
   }
-  else {
-    if ($sm_id) {
-      seo_meta_record_delete(TYPE_NODE, $node->nid);
-    }
+  elseif ($sm_id) {
+    seo_meta_record_delete(TYPE_NODE, $node->nid);
   }
 }
 
@@ -470,27 +376,33 @@ function seo_meta_node_predelete(Node $node) {
  * Implements hook_html_head_alter().
  */
 function seo_meta_html_head_alter(&$head_elements) {
-  $head_elements = array_reverse($head_elements);
   $config = config('seo_meta.settings');
-  $fix_favicon = $config->get('fix_favicon');
-  $tmp_arr = array();
+  $fix_favicon = (bool) $config->get('fix_favicon');
+  $has_seo_canonical = isset($head_elements['seo_meta_canonical']);
 
   foreach ($head_elements as $key => $element) {
-    if (isset($element['#attributes']['rel']) && $element['#attributes']['rel'] == 'canonical') {
-      // deduplicate system canonical
-      $tmp_arr[] = $head_elements[$key];
-      if (count($tmp_arr)> 1) {
-        unset($head_elements[$key]);
-      }
+    $rel = isset($element['#attributes']['rel']) ? $element['#attributes']['rel'] : array();
+    $rel_values = is_array($rel) ? $rel : preg_split('/\s+/', strtolower((string) $rel));
+    $rel_values = array_map('strtolower', array_values($rel_values));
+
+    if ($has_seo_canonical && $key != 'seo_meta_canonical' && in_array('canonical', $rel_values, TRUE)) {
+      unset($head_elements[$key]);
+      continue;
     }
 
-    if ($fix_favicon) {
-      if (isset($element['#attributes']['rel']) && $element['#attributes']['rel'] == 'shortcut icon') {
-        $head_elements[$key]['#attributes']['type'] = 'image/x-icon';
-        $head_elements[$key]['#attributes']['rel'] = 'icon';
-      }
+    if ($fix_favicon && in_array('shortcut', $rel_values, TRUE) && in_array('icon', $rel_values, TRUE)) {
+      $head_elements[$key]['#attributes']['type'] = 'image/x-icon';
+      $head_elements[$key]['#attributes']['rel'] = 'icon';
     }
   }
+}
+
+/**
+ * Checks whether front-end metadata is disabled for a content type.
+ */
+function seo_meta_content_type_excluded($type) {
+  $excluded_types = config_get('seo_meta.settings', 'excluded_types');
+  return is_array($excluded_types) && !empty($excluded_types[$type]);
 }
 
 /**
@@ -499,39 +411,56 @@ function seo_meta_html_head_alter(&$head_elements) {
  * @return object $caller or FALSE for admin path
  */
 function seo_meta_caller() {
-  if (path_is_admin($_GET['q'])) {
+  if (path_is_admin(current_path())) {
     return FALSE;
   }
 
   global $language;
   $caller = new stdClass();
-  $caller->langcode = $language->langcode;
+  $caller->langcode = isset($language->langcode) ? $language->langcode : LANGUAGE_NONE;
 
   if (arg(0) == 'node' && is_numeric(arg(1))) {
+    $node = menu_get_object();
+    if (!is_object($node)) {
+      $node = node_load(arg(1));
+    }
+    if (is_object($node) && seo_meta_content_type_excluded($node->type) && !backdrop_is_front_page()) {
+      return FALSE;
+    }
     $caller->type = TYPE_NODE;
     $caller->id = arg(1);
   }
 
-  if (arg(0) == 'taxonomy' && arg(1) == 'term' && arg(2)) {
-    $term_name = taxonomy_term_load(arg(2))->name;
-    $caller->type = TYPE_TAXONOMY;
-    $caller->id = $term_name;
+  if (arg(0) == 'taxonomy' && arg(1) == 'term' && is_numeric(arg(2))) {
+    $term = taxonomy_term_load(arg(2));
+    if (is_object($term)) {
+      $caller->type = TYPE_TAXONOMY;
+      $caller->id = $term->name;
+    }
   }
 
-  if (function_exists('views_get_page_view') && views_get_page_view()){
-    $view_name = views_get_page_view()->name;
-    $caller->type = TYPE_VIEW;
-    $caller->id = $view_name;
+  if (function_exists('views_get_page_view')) {
+    $view = views_get_page_view();
+    if ($view) {
+      $caller->type = TYPE_VIEW;
+      $caller->id = $view->name;
+    }
   }
-  // front(home)page as type should overwrite original content entry (node, view...) if it defined as FP
+
+  // The front page definition overrides its underlying node or View context.
   if (backdrop_is_front_page()) {
     $caller->is_front = TRUE;
     $caller->type = TYPE_HOMEPAGE;
-    $caller->id = $caller->langcode != 'und' ? $caller->langcode : '';
+    $caller->id = $caller->langcode != LANGUAGE_NONE ? $caller->langcode : '';
   }
-  // fix for pages with undefined id and type, user login for example
-  $caller->id = isset($caller->id) ? $caller->id : $caller->langcode;
-  $caller->type = isset($caller->type) ? $caller->type : TYPE_DEFAULTS;
+
+  // Use language defaults for pages without a supported specific context.
+  if (!isset($caller->id)) {
+    $caller->id = $caller->langcode;
+  }
+  if (!isset($caller->type)) {
+    $caller->type = TYPE_DEFAULTS;
+  }
 
   return $caller;
 }
@@ -581,26 +510,7 @@ function seo_meta_get_saved_tags($ce_type, $ce_id) {
  *
  */
 function seo_meta_get_saved_defaults($langcode) {
-  $result = db_select('seo_meta', 'sm')
-      ->fields('sm', array(
-        'meta_keywords',
-        'meta_description',
-        'meta_robots',
-        'meta_tw_card',
-        'meta_tw_site',
-        'meta_tw_creator',
-        'meta_og_type',
-        'meta_og_title',
-        'meta_og_description',
-        'meta_og_site_name',
-        'meta_og_image_fid',
-        )
-      )
-      ->condition('ce_type', TYPE_DEFAULTS, '=')
-      ->condition('ce_id', $langcode, '=')
-      ->execute()
-      ->fetchAssoc();
-  return $result;
+  return seo_meta_get_saved_tags(TYPE_DEFAULTS, $langcode);
 }
 
 /**
@@ -609,9 +519,14 @@ function seo_meta_get_saved_defaults($langcode) {
  * @param array $data
  */
 function seo_meta_record_insert($data = array()) {
-  db_insert('seo_meta')
-      ->fields($data)
-      ->execute();
+  $sm_id = db_insert('seo_meta')
+    ->fields($data)
+    ->execute();
+
+  $fid = isset($data['meta_og_image_fid']) ? (int) $data['meta_og_image_fid'] : 0;
+  seo_meta_update_file_usage($sm_id, 0, $fid);
+
+  return $sm_id;
 }
 
 /**
@@ -622,11 +537,25 @@ function seo_meta_record_insert($data = array()) {
  * @param array $data
  */
 function seo_meta_record_update($ce_type = '', $ce_id = '', $data = array()) {
+  $record = db_select('seo_meta', 'sm')
+    ->fields('sm', array('sm_id', 'meta_og_image_fid'))
+    ->condition('ce_type', $ce_type)
+    ->condition('ce_id', $ce_id)
+    ->execute()
+    ->fetchObject();
+
   db_update('seo_meta')
-      ->fields($data)
-      ->condition('ce_type', $ce_type, '=')
-      ->condition('ce_id', $ce_id, '=')
-      ->execute();
+    ->fields($data)
+    ->condition('ce_type', $ce_type)
+    ->condition('ce_id', $ce_id)
+    ->execute();
+
+  if ($record) {
+    $new_fid = isset($data['meta_og_image_fid'])
+      ? (int) $data['meta_og_image_fid']
+      : (int) $record->meta_og_image_fid;
+    seo_meta_update_file_usage($record->sm_id, $record->meta_og_image_fid, $new_fid);
+  }
 }
 
 /**
@@ -636,196 +565,379 @@ function seo_meta_record_update($ce_type = '', $ce_id = '', $data = array()) {
  * @param string $ce_id
  */
 function seo_meta_record_delete($ce_type = '', $ce_id = '') {
-  $result = db_select('seo_meta', 'sm')
-      ->fields('sm')
-      ->condition('ce_type', $ce_type, '=')
-      ->condition('ce_id', $ce_id, '=')
-      ->execute()
-      ->fetchObject();
+  $record = db_select('seo_meta', 'sm')
+    ->fields('sm', array('sm_id', 'meta_og_image_fid'))
+    ->condition('ce_type', $ce_type)
+    ->condition('ce_id', $ce_id)
+    ->execute()
+    ->fetchObject();
 
-  if (is_object($result)) {
-    $sm_id = $result->sm_id;
-    $sm_fid = $result->meta_og_image_fid;
+  if (!$record) {
+    return;
+  }
 
-    if (!empty($sm_fid)) {
-      file_delete($sm_fid);
+  seo_meta_update_file_usage($record->sm_id, $record->meta_og_image_fid, 0);
+  db_delete('seo_meta')
+    ->condition('sm_id', $record->sm_id)
+    ->execute();
+}
+
+/**
+ * Updates the managed-file usage owned by one SEO metadata record.
+ */
+function seo_meta_update_file_usage($sm_id, $old_fid, $new_fid) {
+  $old_fid = (int) $old_fid;
+  $new_fid = (int) $new_fid;
+
+  if ($old_fid && $old_fid != $new_fid) {
+    $old_file = file_load($old_fid);
+    if ($old_file) {
+      file_usage_delete($old_file, 'seo_meta', 'seo_meta', $sm_id, 1);
     }
+  }
 
-    db_delete('seo_meta')
-        ->condition('sm_id', $sm_id)
-        ->execute();
+  if (!$new_fid) {
+    return;
+  }
+
+  $new_file = file_load($new_fid);
+  if (!$new_file) {
+    return;
+  }
+
+  $usage = file_usage_list($new_file);
+  if (empty($usage['seo_meta']['seo_meta'][$sm_id])) {
+    file_usage_add($new_file, 'seo_meta', 'seo_meta', $sm_id);
   }
 }
+
+/**
+ * Returns the supported robots directives in storage order.
+ */
+function seo_meta_robots_directives() {
+  return array('INDEX,FOLLOW', 'NOINDEX', 'NOFOLLOW', 'NOSNIPPET', 'NOIMAGEINDEX');
+}
+
+/**
+ * Returns the supported selected robots directives from saved or form data.
+ */
+function seo_meta_robots_decode($value) {
+  if (is_string($value)) {
+    if ($value === '') {
+      return array();
+    }
+    $decoded = @unserialize($value, array('allowed_classes' => FALSE));
+    if ($decoded === FALSE && $value !== 'b:0;') {
+      return array();
+    }
+    $value = $decoded;
+  }
+
+  if (!is_array($value)) {
+    return array();
+  }
+
+  $allowed = seo_meta_robots_directives();
+  $selected = array();
+  foreach ($value as $key => $item) {
+    $candidate = '';
+    if (is_string($item) && $item !== '') {
+      $candidate = strtoupper($item);
+    }
+    elseif ($item && is_string($key)) {
+      $candidate = strtoupper($key);
+    }
+
+    if (in_array($candidate, $allowed, TRUE) && !in_array($candidate, $selected, TRUE)) {
+      $selected[] = $candidate;
+    }
+  }
+
+  return $selected;
+}
+
+/**
+ * Encodes current robots choices for storage.
+ */
+function seo_meta_robots_encode($value) {
+  $stored = array_fill_keys(seo_meta_robots_directives(), 0);
+  foreach (seo_meta_robots_decode($value) as $directive) {
+    $stored[$directive] = $directive;
+  }
+  return serialize($stored);
+}
+
+/**
+ * Builds a deterministic robots meta value.
+ */
+function seo_meta_robots_content($value) {
+  $selected = seo_meta_robots_decode($value);
+  $directives = array();
+
+  if (in_array('INDEX,FOLLOW', $selected, TRUE)) {
+    $directives[] = 'index';
+    $directives[] = 'follow';
+  }
+  else {
+    $directives[] = in_array('NOINDEX', $selected, TRUE) ? 'noindex' : 'index';
+    $directives[] = in_array('NOFOLLOW', $selected, TRUE) ? 'nofollow' : 'follow';
+  }
+
+  if (in_array('NOSNIPPET', $selected, TRUE)) {
+    $directives[] = 'nosnippet';
+  }
+  if (in_array('NOIMAGEINDEX', $selected, TRUE)) {
+    $directives[] = 'noimageindex';
+  }
+
+  return implode(',', $directives);
+}
+
+/**
+ * Checks whether a stored value is an explicit page/default value.
+ */
+function seo_meta_value_is_set($field, $value) {
+  if ($field == 'meta_robots') {
+    return count(seo_meta_robots_decode($value)) > 0;
+  }
+  if ($field == 'meta_og_image_fid') {
+    return (int) $value > 0;
+  }
+  if (!is_scalar($value)) {
+    return FALSE;
+  }
+
+  $value = trim((string) $value);
+  return $value !== '' && $value !== 'und';
+}
+
+/**
+ * Resolves page values over non-empty defaults, field by field.
+ */
+function seo_meta_resolve_tags($caller, $page_title = '') {
+  $page_tags = seo_meta_get_saved_tags($caller->type, $caller->id);
+  $default_tags = seo_meta_get_saved_defaults($caller->langcode);
+  $page_tags = is_array($page_tags) ? $page_tags : array();
+  $default_tags = is_array($default_tags) ? $default_tags : array();
+
+  $fields = array(
+    'meta_keywords',
+    'meta_description',
+    'meta_robots',
+    'meta_og_type',
+    'meta_og_title',
+    'meta_og_description',
+    'meta_og_site_name',
+    'meta_tw_card',
+    'meta_tw_site',
+    'meta_tw_creator',
+  );
+
+  $tags = array();
+  foreach ($fields as $field) {
+    $tags[$field] = isset($default_tags[$field]) && seo_meta_value_is_set($field, $default_tags[$field])
+      ? $default_tags[$field]
+      : '';
+    if (isset($page_tags[$field]) && seo_meta_value_is_set($field, $page_tags[$field])) {
+      $tags[$field] = $page_tags[$field];
+    }
+  }
+
+  $tags['page_title'] = isset($page_tags['page_title']) && seo_meta_value_is_set('page_title', $page_tags['page_title'])
+    ? $page_tags['page_title']
+    : $page_title;
+  $tags['rel_canonical'] = isset($page_tags['rel_canonical']) && seo_meta_value_is_set('rel_canonical', $page_tags['rel_canonical'])
+    ? $page_tags['rel_canonical']
+    : '';
+
+  $page_fid = isset($page_tags['meta_og_image_fid']) ? (int) $page_tags['meta_og_image_fid'] : 0;
+  $default_fid = isset($default_tags['meta_og_image_fid']) ? (int) $default_tags['meta_og_image_fid'] : 0;
+  $tags['og_image'] = seo_meta_image_info($page_fid);
+  if (!$tags['og_image'] && $default_fid != $page_fid) {
+    $tags['og_image'] = seo_meta_image_info($default_fid);
+  }
+
+  return $tags;
+}
+
+/**
+ * Loads a valid managed Open Graph image and its dimensions.
+ */
+function seo_meta_image_info($fid) {
+  $fid = (int) $fid;
+  if (!$fid) {
+    return FALSE;
+  }
+
+  $file = file_load($fid);
+  if (!$file) {
+    return FALSE;
+  }
+
+  $info = image_get_info($file->uri);
+  $url = file_create_url($file->uri);
+  if (!$info || !$url || !isset($info['mime_type'], $info['width'], $info['height'])) {
+    return FALSE;
+  }
+
+  return array(
+    'url' => $url,
+    'type' => $info['mime_type'],
+    'width' => (int) $info['width'],
+    'height' => (int) $info['height'],
+  );
+}
+
+/**
+ * Adds one metadata element to the HTML head.
+ */
+function seo_meta_add_meta_tag($key, $attribute, $name, $content, $weight) {
+  if (!is_scalar($content) || trim((string) $content) === '') {
+    return;
+  }
+
+  backdrop_add_html_head(array(
+    '#tag' => 'meta',
+    '#attributes' => array(
+      $attribute => $name,
+      'content' => (string) $content,
+    ),
+    '#weight' => $weight,
+  ), 'seo_meta_' . $key);
+}
+
 /**
  * Prepare and add to render saved or default meta tags
  *
  */
-function seo_meta_build_page_tags() {
-  $secure = config_get('system.core', 'canonical_secure') == 1 ? TRUE : FALSE;
-  $caller = seo_meta_caller();
-  $weight = TAG_WEIGHT;
-
-  if (!$caller) {
-    return;
+function seo_meta_build_page_tags($tags = array(), $canonical_url = '') {
+  if (!$tags) {
+    $caller = seo_meta_caller();
+    if (!$caller) {
+      return;
+    }
+    $tags = seo_meta_resolve_tags($caller);
   }
 
-  $saved_tags = seo_meta_get_saved_tags($caller->type, $caller->id);
+  $tags += array(
+    'page_title' => '',
+    'meta_keywords' => '',
+    'meta_description' => '',
+    'meta_robots' => '',
+    'meta_og_type' => '',
+    'meta_og_title' => '',
+    'meta_og_description' => '',
+    'meta_og_site_name' => '',
+    'meta_tw_card' => '',
+    'meta_tw_site' => '',
+    'meta_tw_creator' => '',
+    'og_image' => FALSE,
+  );
 
-  if (!empty($saved_tags)) {
-    $tags = $saved_tags;
+  $config = config('seo_meta.settings');
+
+  if ($config->get('use_keywords') && seo_meta_value_is_set('meta_keywords', $tags['meta_keywords'])) {
+    seo_meta_add_meta_tag('keywords', 'name', 'keywords', $tags['meta_keywords'], TAG_WEIGHT + 10);
   }
-  else {
-    $tags = seo_meta_get_saved_defaults($caller->langcode);
+  if (seo_meta_value_is_set('meta_description', $tags['meta_description'])) {
+    seo_meta_add_meta_tag('description', 'name', 'description', $tags['meta_description'], TAG_WEIGHT + 20);
+  }
+  seo_meta_add_meta_tag('robots', 'name', 'robots', seo_meta_robots_content($tags['meta_robots']), TAG_WEIGHT + 30);
+
+  $og_image = !empty($tags['og_image']) ? $tags['og_image'] : FALSE;
+  $og_title = seo_meta_value_is_set('meta_og_title', $tags['meta_og_title'])
+    ? $tags['meta_og_title']
+    : $tags['page_title'];
+  $og_description = seo_meta_value_is_set('meta_og_description', $tags['meta_og_description'])
+    ? $tags['meta_og_description']
+    : '';
+  $og_active = $config->get('use_og_url')
+    || seo_meta_value_is_set('meta_og_title', $tags['meta_og_title'])
+    || seo_meta_value_is_set('meta_og_type', $tags['meta_og_type'])
+    || seo_meta_value_is_set('meta_og_description', $tags['meta_og_description'])
+    || seo_meta_value_is_set('meta_og_site_name', $tags['meta_og_site_name'])
+    || $og_image;
+
+  if ($og_active) {
+    $og_type = seo_meta_value_is_set('meta_og_type', $tags['meta_og_type']) ? $tags['meta_og_type'] : 'website';
+    seo_meta_add_meta_tag('og_title', 'property', 'og:title', $og_title, TAG_WEIGHT + 60);
+    seo_meta_add_meta_tag('og_type', 'property', 'og:type', $og_type, TAG_WEIGHT + 61);
+
+    if ($og_image) {
+      seo_meta_add_meta_tag('og_image', 'property', 'og:image', $og_image['url'], TAG_WEIGHT + 62);
+      seo_meta_add_meta_tag('og_image_type', 'property', 'og:image:type', $og_image['type'], TAG_WEIGHT + 63);
+      seo_meta_add_meta_tag('og_image_width', 'property', 'og:image:width', $og_image['width'], TAG_WEIGHT + 64);
+      seo_meta_add_meta_tag('og_image_height', 'property', 'og:image:height', $og_image['height'], TAG_WEIGHT + 65);
+    }
+
+    if ($config->get('use_og_url')) {
+      seo_meta_add_meta_tag('og_url', 'property', 'og:url', $canonical_url, TAG_WEIGHT + 66);
+    }
+    seo_meta_add_meta_tag('og_description', 'property', 'og:description', $og_description, TAG_WEIGHT + 70);
+    seo_meta_add_meta_tag('og_site_name', 'property', 'og:site_name', $tags['meta_og_site_name'], TAG_WEIGHT + 71);
   }
 
-  if (!empty($tags)) {
-    foreach ($tags as $tag => $value) {
-      if (!empty($value)) {
-        $excluded_tags = array('page_title', 'rel_canonical');
-        if (in_array($tag, $excluded_tags)) {
-          continue;
-        }
-
-        if ($tag == 'meta_robots') {
-          $array_meta_robots = unserialize($value);
-          $meta_robots       = '';
-
-          foreach ($array_meta_robots as $key => $name) {
-            if ($name) {
-              $meta_robots .= strtolower($key) . ', ';
-            }
-          }
-          $value = rtrim($meta_robots, ', ');
-
-          if ($value == '') {
-            continue;
-          }
-        }
-
-        if ($tag == 'meta_og_image_fid') {
-          $image = file_load($value);
-          $value = is_object($image) ? file_create_url($image->uri) : '';
-
-          if (!empty($value) && $secure) {
-            $value = str_replace('http://', 'https://', $value);
-          }
-
-          $attribute = 'property';
-          $tag = str_replace('_fid', '', $tag);
-        }
-
-        if (strpos($tag, 'meta_og') === FALSE) {
-          $attribute = 'name';
-          if (strpos($tag, 'meta_tw') === FALSE) {
-            $weight = $weight + 10;
-            $tag = str_replace('meta_', '', $tag);
-          }
-          else {
-            $weight = $weight + 11;
-            $tag = str_replace('meta_tw_', 'twitter:', $tag);
-          }
-        }
-        else {
-          $attribute = 'property';
-          $weight = $weight + 75;
-          $tag = str_replace('meta_og_', 'og:', $tag);
-        }
-
-        $element = array(
-          '#tag' => 'meta',
-          '#attributes' => array(
-            $attribute => $tag,
-            'content' => $value,
-          ),
-          '#weight' => $weight,
-        );
-        backdrop_add_html_head($element, 'seo_meta_' . $tag);
-      }
+  $card_map = array(
+    'photo' => 'summary_large_image',
+    'gallery' => 'summary_large_image',
+    'product' => 'summary',
+  );
+  $card = isset($card_map[$tags['meta_tw_card']]) ? $card_map[$tags['meta_tw_card']] : $tags['meta_tw_card'];
+  if (in_array($card, array('summary', 'summary_large_image'), TRUE)) {
+    seo_meta_add_meta_tag('twitter_card', 'name', 'twitter:card', $card, TAG_WEIGHT + 80);
+    seo_meta_add_meta_tag('twitter_site', 'name', 'twitter:site', $tags['meta_tw_site'], TAG_WEIGHT + 81);
+    seo_meta_add_meta_tag('twitter_creator', 'name', 'twitter:creator', $tags['meta_tw_creator'], TAG_WEIGHT + 82);
+    seo_meta_add_meta_tag('twitter_title', 'name', 'twitter:title', $og_title, TAG_WEIGHT + 83);
+    seo_meta_add_meta_tag('twitter_description', 'name', 'twitter:description', $og_description, TAG_WEIGHT + 84);
+    if ($og_image) {
+      seo_meta_add_meta_tag('twitter_image', 'name', 'twitter:image', $og_image['url'], TAG_WEIGHT + 85);
     }
   }
 }
 
 function seo_meta_preprocess_page(&$variables) {
-  // not for admin pages
-  if (path_is_admin($_GET['q'])) {
-    return FALSE;
+  if (path_is_admin(current_path())) {
+    return;
   }
-
-  global $base_url;
 
   $is_node_page = arg(0) == 'node' && is_numeric(arg(1));
-
   $status = backdrop_get_http_header('status');
-  // avoid non-custom http status errors pages
   if (in_array($status, array('404 Not Found', '403 Forbidden')) && !$is_node_page) {
-    return FALSE;
+    return;
   }
 
-  $config         = config('seo_meta.settings');
-  $use_og_url     = $config->get('use_og_url');
-  $caller         = seo_meta_caller();
-  $caller_type    = is_object($caller) ? $caller->type : NULL;
-  $seo_meta_title = is_object($caller) ? seo_meta_get_tag_value('page_title', $caller->type, $caller->id) : '';
-  $head_site_name = $variables['head_title_array']['name'];
-
-  // Add page title
-  if (!empty($seo_meta_title) && $seo_meta_title != 'und') {
-    $page_title = $seo_meta_title;
-  }
-  else {
-    $page_title = isset($variables['head_title_array']['title']) ? $variables['head_title_array']['title'] : '';
+  $caller = seo_meta_caller();
+  if (!$caller) {
+    return;
   }
 
-  if (!empty($page_title)) {
-    if ($config->get('append_site_name')) {
-      $site_name_divider = $config->get('site_name_divider');
-      $variables['head_title'] = $page_title . ' ' . $site_name_divider . ' ' . $head_site_name;
+  $normal_title = isset($variables['head_title_array']['title']) ? $variables['head_title_array']['title'] : '';
+  $tags = seo_meta_resolve_tags($caller, $normal_title);
+  $page_title = $tags['page_title'];
+  $config = config('seo_meta.settings');
+
+  if (seo_meta_value_is_set('page_title', $page_title)) {
+    if ($config->get('append_site_name') && !empty($variables['head_title_array']['name'])) {
+      $variables['head_title'] = $page_title . ' ' . $config->get('site_name_divider') . ' ' . $variables['head_title_array']['name'];
     }
     else {
       $variables['head_title'] = $page_title;
     }
   }
 
-  // Add canonical URL to views and homepages overriding
-  if ($caller_type == TYPE_VIEW) {
-    $view_url = url(current_path(), array('absolute' => TRUE));
-    $canonical_url =  seo_meta_canonical_url($view_url);
-  }
-
-  if ($caller_type == TYPE_HOMEPAGE) {
-    $canonical_url = seo_meta_canonical_url($base_url);
-  }
-
-  if (!empty($canonical_url)) {
-    backdrop_add_html_head_link(array('rel' => 'canonical', 'href' => $canonical_url));
-  }
-
-  // add og:url if selected in default settings
-  if ($use_og_url) {
-    $current_path = current_path();
-    $secure = config_get('system.core', 'canonical_secure') == 1 ? TRUE : FALSE;
-
-    if ($caller_type == TYPE_HOMEPAGE) {
-      $current_url = url('/', array('absolute' => TRUE, 'https' => $secure));
-    }
-    else {
-      $current_url = url($current_path, array('absolute' => TRUE, 'https' => $secure));
-    }
-
-    backdrop_add_html_head(
-      array(
-        '#tag' => 'meta',
-        '#attributes' => array(
-          'property' => 'og:url',
-          'content' => $current_url,
-        ),
-        '#weight' => TAG_WEIGHT + 65,
+  $canonical_url = seo_meta_canonical_url('', $tags['rel_canonical']);
+  if ($canonical_url) {
+    backdrop_add_html_head(array(
+      '#tag' => 'link',
+      '#attributes' => array(
+        'rel' => 'canonical',
+        'href' => $canonical_url,
       ),
-      'seo_meta_url'
-    );
+      '#weight' => TAG_WEIGHT + 40,
+    ), 'seo_meta_canonical');
   }
-  // Add rest of meta tags
-  seo_meta_build_page_tags();
+
+  seo_meta_build_page_tags($tags, $canonical_url);
 }
 
 /**
@@ -833,30 +945,52 @@ function seo_meta_preprocess_page(&$variables) {
  *
  * @return string $canonical_url
  */
-function seo_meta_canonical_url($system_canonical = '') {
-  global $base_url;
-  $canonical_secure   = config_get('system.core', 'canonical_secure');
-  $proto              = $canonical_secure ? 'https://' : 'http://';
-  $path               = parse_url($system_canonical, PHP_URL_PATH);
-  $host               = parse_url($base_url, PHP_URL_HOST);
-  $base_canonical_url = rtrim(config_get('seo_meta.settings', 'base_canonical_url'), '/');
-  $caller             = seo_meta_caller();
+function seo_meta_canonical_url($system_canonical = '', $rel_canonical = '') {
+  $secure = config_get('system.core', 'canonical_secure') == 1;
+  $options = array(
+    'absolute' => TRUE,
+    'https' => $secure,
+  );
+  $rel_canonical = trim((string) $rel_canonical);
 
-  // If base canonical URL is not defined by default
-  if ($base_canonical_url == '') {
-    $base_canonical_url = $host;
+  // A complete explicit URL is used as entered.
+  if (preg_match('@^https?://@i', $rel_canonical)) {
+    if (valid_url($rel_canonical, TRUE)) {
+      return preg_replace('/#.*$/', '', $rel_canonical);
+    }
+    $rel_canonical = '';
   }
 
-  $canonical_url = $proto . $base_canonical_url . $path;
+  // Ignore unsupported schemes in legacy stored values.
+  if ($rel_canonical !== '' && preg_match('/^[a-z][a-z0-9+.-]*:/i', $rel_canonical)) {
+    $rel_canonical = '';
+  }
 
-  // Check if canonical URL redefined in content entry
-  if (is_object($caller)) {
+  if ($rel_canonical !== '') {
+    $parsed = backdrop_parse_url(ltrim($rel_canonical, '/'));
+    $path = $parsed['path'] !== '' ? $parsed['path'] : (backdrop_is_front_page() ? '<front>' : current_path());
+    $options['query'] = $parsed['query'];
+    $options['alias'] = TRUE;
+    $canonical_url = url($path, $options);
+  }
+  elseif ($system_canonical && valid_url($system_canonical, TRUE)) {
+    $canonical_url = $system_canonical;
+  }
+  else {
+    $path = backdrop_is_front_page() ? '<front>' : current_path();
+    $canonical_url = url($path, $options);
+  }
 
-    $rel_canonical = seo_meta_get_tag_value('rel_canonical', $caller->type, $caller->id);
-
-    if ($rel_canonical != '') {
-
-      $canonical_url = strpos($rel_canonical, 'http') !== 0 ? $proto . $base_canonical_url . '/' . $rel_canonical : $rel_canonical;
+  // Replace only the normal hostname portion when a canonical host is set.
+  $base_canonical_url = trim((string) config_get('seo_meta.settings', 'base_canonical_url'), " \t\n\r\0\x0B/");
+  if ($base_canonical_url !== '' && preg_match('/^[a-z0-9.-]+(?::[0-9]{1,5})?$/i', $base_canonical_url)) {
+    $parts = parse_url($canonical_url);
+    if (is_array($parts) && isset($parts['scheme'], $parts['host'])) {
+      $path = isset($parts['path']) ? $parts['path'] : '/';
+      $canonical_url = $parts['scheme'] . '://' . $base_canonical_url . $path;
+      if (!empty($parts['query'])) {
+        $canonical_url .= '?' . $parts['query'];
+      }
     }
   }
 

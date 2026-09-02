@@ -20,6 +20,15 @@ function seo_meta_requirements($phase) {
     }
   }
 
+  if ($phase == 'runtime' && module_exists('metatag')) {
+    $requirements['seo_meta_metatag'] = array(
+      'title' => $t('SEO Meta Tags and Metatag'),
+      'value' => $t('Both modules are enabled'),
+      'description' => $t('These modules may generate duplicate or conflicting page titles, canonical links, robots directives, Open Graph properties, and Twitter/X Card tags. Configure the site so only one module outputs each overlapping metadata group.'),
+      'severity' => REQUIREMENT_WARNING,
+    );
+  }
+
   return $requirements;
 }
 
@@ -183,4 +192,23 @@ function seo_meta_update_1001() {
   $config = config('seo_meta.settings');
   $config->set('excluded_types', []);
   $config->save();
+}
+
+/**
+ * Replaces retired Twitter Card types with supported Summary Cards.
+ */
+function seo_meta_update_1002() {
+  $large_count = db_update('seo_meta')
+    ->fields(array('meta_tw_card' => 'summary_large_image'))
+    ->condition('meta_tw_card', array('photo', 'gallery'), 'IN')
+    ->execute();
+
+  $summary_count = db_update('seo_meta')
+    ->fields(array('meta_tw_card' => 'summary'))
+    ->condition('meta_tw_card', 'product')
+    ->execute();
+
+  return t('Updated @count legacy Twitter Card value(s).', array(
+    '@count' => $large_count + $summary_count,
+  ));
 }
